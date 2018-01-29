@@ -53,28 +53,14 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
   ShmInitGeneric();
 }
 
-CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors)
+CartesianCommunicator::~CartesianCommunicator()
 {
-  _ndimension = processors.size();
-  std::vector<int> periodic(_ndimension,1);
-
-  _Nprocessors=1;
-  _processors = processors;
-  _processor_coor.resize(_ndimension);
-  
-  MPI_Cart_create(communicator_world, _ndimension,&_processors[0],&periodic[0],1,&communicator);
-  MPI_Comm_rank(communicator,&_processor);
-  MPI_Cart_coords(communicator,_processor,_ndimension,&_processor_coor[0]);
-
-  for(int i=0;i<_ndimension;i++){
-    _Nprocessors*=_processors[i];
-  }
-  
-  int Size; 
-  MPI_Comm_size(communicator,&Size);
-  
-  assert(Size==_Nprocessors);
+  int MPI_is_finalised;
+  MPI_Finalized(&MPI_is_finalised);
+  if (communicator && !MPI_is_finalised)
+    MPI_Comm_free(&communicator);
 }
+
 void CartesianCommunicator::GlobalSum(uint32_t &u){
   int ierr=MPI_Allreduce(MPI_IN_PLACE,&u,1,MPI_UINT32_T,MPI_SUM,communicator);
   assert(ierr==0);
@@ -229,6 +215,8 @@ void CartesianCommunicator::BroadcastWorld(int root,void* data, int bytes)
 		      communicator_world);
   assert(ierr==0);
 }
+
+
 
 }
 

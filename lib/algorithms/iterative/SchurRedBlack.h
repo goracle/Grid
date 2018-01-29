@@ -53,13 +53,36 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
    *     M psi = eta
    ***********************
    *Odd
-   * i)   (D_oo)^{\dag} D_oo psi_o = (D_oo)^dag L^{-1}  eta_o
+   * i)                 D_oo psi_o =  L^{-1}  eta_o
    *                        eta_o' = (D_oo)^dag (eta_o - Moe Mee^{-1} eta_e)
+   *
+   * Wilson:
+   *      (D_oo)^{\dag} D_oo psi_o = (D_oo)^dag L^{-1}  eta_o
+   * Stag:
+   *      D_oo psi_o = L^{-1}  eta =    (eta_o - Moe Mee^{-1} eta_e)
+   *
+   * L^-1 eta_o= (1              0 ) (e
+   *             (-MoeMee^{-1}   1 )   
+   *
    *Even
    * ii)  Mee psi_e + Meo psi_o = src_e
    *
    *   => sol_e = M_ee^-1 * ( src_e - Meo sol_o )...
    *
+   * 
+   * TODO: Other options:
+   * 
+   * a) change checkerboards for Schur e<->o
+   *
+   * Left precon by Moo^-1
+   * b) Doo^{dag} M_oo^-dag Moo^-1 Doo psi_0 =  (D_oo)^dag M_oo^-dag Moo^-1 L^{-1}  eta_o
+   *                              eta_o'     = (D_oo)^dag  M_oo^-dag Moo^-1 (eta_o - Moe Mee^{-1} eta_e)
+   *
+   * Right precon by Moo^-1
+   * c) M_oo^-dag Doo^{dag} Doo Moo^-1 phi_0 = M_oo^-dag (D_oo)^dag L^{-1}  eta_o
+   *                              eta_o'     = M_oo^-dag (D_oo)^dag (eta_o - Moe Mee^{-1} eta_e)
+   *                              psi_o = M_oo^-1 phi_o
+   * TODO: Deflation 
    */
 namespace Grid {
 
@@ -67,7 +90,8 @@ namespace Grid {
   // Take a matrix and form a Red Black solver calling a Herm solver
   // Use of RB info prevents making SchurRedBlackSolve conform to standard interface
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
-  template<class Field> class SchurRedBlackStagSolve {
+  // Now make the norm reflect extra factor of Mee
+  template<class Field> class SchurRedBlackStaggeredSolve {
   private:
     OperatorFunction<Field> & _HermitianRBSolver;
     int CBfactorise;
@@ -76,7 +100,7 @@ namespace Grid {
     /////////////////////////////////////////////////////
     // Wrap the usual normal equations Schur trick
     /////////////////////////////////////////////////////
-  SchurRedBlackStagSolve(OperatorFunction<Field> &HermitianRBSolver)  :
+  SchurRedBlackStaggeredSolve(OperatorFunction<Field> &HermitianRBSolver)  :
      _HermitianRBSolver(HermitianRBSolver) 
     { 
       CBfactorise=0;
@@ -90,7 +114,7 @@ namespace Grid {
       GridBase *grid = _Matrix.RedBlackGrid();
       GridBase *fgrid= _Matrix.Grid();
 
-      SchurStagOperator<Matrix,Field> _HermOpEO(_Matrix);
+      SchurStaggeredOperator<Matrix,Field> _HermOpEO(_Matrix);
  
       Field src_e(grid);
       Field src_o(grid);
@@ -99,30 +123,31 @@ namespace Grid {
       Field   tmp(grid);
       Field  Mtmp(grid);
       Field resid(fgrid);
-
+      
+      std::cout << GridLogMessage << " SchurRedBlackStaggeredSolve " <<std::endl;
       pickCheckerboard(Even,src_e,in);
       pickCheckerboard(Odd ,src_o,in);
       pickCheckerboard(Even,sol_e,out);
       pickCheckerboard(Odd ,sol_o,out);
+
+      std::cout << GridLogMessage << " SchurRedBlackStaggeredSolve checkerboards picked" <<std::endl;
     
       /////////////////////////////////////////////////////
-      // src_o = Mdag * (source_o - Moe MeeInv source_e)
+      // src_o = (source_o - Moe MeeInv source_e)
       /////////////////////////////////////////////////////
       _Matrix.MooeeInv(src_e,tmp);     assert(  tmp.checkerboard ==Even);
       _Matrix.Meooe   (tmp,Mtmp);      assert( Mtmp.checkerboard ==Odd);     
       tmp=src_o-Mtmp;                  assert(  tmp.checkerboard ==Odd);     
 
-#if 0
-      // get the right MpcDag
-//      _HermOpEO.MpcDag(tmp,src_o);     assert(src_o.checkerboard ==Odd);       
-#else
-      _Matrix.Mooee(tmp,src_o);     assert(src_o.checkerboard ==Odd);
-#endif
+      //src_o = tmp;     assert(src_o.checkerboard ==Odd);
+      _Matrix.Mooee(tmp,src_o); // Extra factor of "m" in source from dumb choice of matrix norm.
+
       //////////////////////////////////////////////////////////////
       // Call the red-black solver
       //////////////////////////////////////////////////////////////
-      std::cout<<GridLogMessage << "SchurRedBlack solver calling the MpcDagMp solver" <<std::endl;
+      std::cout<<GridLogMessage << "SchurRedBlackStaggeredSolver calling the Mpc solver" <<std::endl;
       _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
+      std::cout<<GridLogMessage << "SchurRedBlackStaggeredSolver called  the Mpc solver" <<std::endl;
 
       ///////////////////////////////////////////////////
       // sol_e = M_ee^-1 * ( src_e - Meo sol_o )...
@@ -131,18 +156,20 @@ namespace Grid {
       src_e = src_e-tmp;               assert(  src_e.checkerboard ==Even);
       _Matrix.MooeeInv(src_e,sol_e);   assert(  sol_e.checkerboard ==Even);
      
+      std::cout<<GridLogMessage << "SchurRedBlackStaggeredSolver reconstructed other CB" <<std::endl;
       setCheckerboard(out,sol_e); assert(  sol_e.checkerboard ==Even);
       setCheckerboard(out,sol_o); assert(  sol_o.checkerboard ==Odd );
+      std::cout<<GridLogMessage << "SchurRedBlackStaggeredSolver inserted solution" <<std::endl;
 
       // Verify the unprec residual
       _Matrix.M(out,resid); 
       resid = resid-in;
       RealD ns = norm2(in);
       RealD nr = norm2(resid);
-
-      std::cout<<GridLogMessage << "SchurRedBlackStag solver true unprec resid "<< std::sqrt(nr/ns) <<" nr "<< nr <<" ns "<<ns << std::endl;
+      std::cout<<GridLogMessage << "SchurRedBlackStaggered solver true unprec resid "<< std::sqrt(nr/ns) <<" nr "<< nr <<" ns "<<ns << std::endl;
     }     
   };
+  template<class Field> using SchurRedBlackStagSolve = SchurRedBlackStaggeredSolve<Field>;
 
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
   // Take a matrix and form a Red Black solver calling a Herm solver
@@ -157,12 +184,10 @@ namespace Grid {
     /////////////////////////////////////////////////////
     // Wrap the usual normal equations Schur trick
     /////////////////////////////////////////////////////
-  SchurRedBlackDiagMooeeSolve(OperatorFunction<Field> &HermitianRBSolver)  :
-     _HermitianRBSolver(HermitianRBSolver) 
-    { 
-      CBfactorise=0;
-    };
-
+  SchurRedBlackDiagMooeeSolve(OperatorFunction<Field> &HermitianRBSolver,int cb=0)  :  _HermitianRBSolver(HermitianRBSolver) 
+  { 
+    CBfactorise=cb;
+  };
     template<class Matrix>
       void operator() (Matrix & _Matrix,const Field &in, Field &out){
 
@@ -222,7 +247,7 @@ namespace Grid {
     }     
   };
 
-#if 1
+
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
   // Take a matrix and form a Red Black solver calling a Herm solver
   // Use of RB info prevents making SchurRedBlackSolve conform to standard interface
@@ -302,8 +327,6 @@ namespace Grid {
       std::cout<<GridLogMessage << "SchurRedBlackDiagTwo solver true unprec resid "<< std::sqrt(nr/ns) <<" nr "<< nr <<" ns "<<ns << std::endl;
     }     
   };
-#endif
-#if 1
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
   // Take a matrix and form a Red Black solver calling a Herm solver
   // Use of RB info prevents making SchurRedBlackSolve conform to standard interface
@@ -384,8 +407,6 @@ namespace Grid {
       std::cout<<GridLogMessage << "SchurRedBlackDiagTwo solver true unprec resid "<< std::sqrt(nr/ns) <<" nr "<< nr <<" ns "<<ns << std::endl;
     }     
   };
-#endif
-
 
 }
 #endif

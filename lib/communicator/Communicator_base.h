@@ -44,7 +44,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifdef GRID_COMMS_SHMEM
 #include <mpp/shmem.h>
 #endif
-
+#include <sys/mman.h>
 namespace Grid {
 
 class CartesianCommunicator {
@@ -83,6 +83,7 @@ class CartesianCommunicator {
   std::vector<MPI_Comm> communicator_halo;
 
   typedef MPI_Request CommsRequest_t;
+
 #else 
   typedef int CommsRequest_t;
 #endif
@@ -137,7 +138,7 @@ class CartesianCommunicator {
   size_t heap_top;
   size_t heap_bytes;
 
-  void *ShmBufferSelf(void);
+  static void *ShmBufferSelf(void);
   void *ShmBuffer(int rank);
   void *ShmBufferTranslate(int rank,void * local_p);
   void *ShmBufferMalloc(size_t bytes);
@@ -147,11 +148,32 @@ class CartesianCommunicator {
   // Must call in Grid startup
   ////////////////////////////////////////////////
   static void Init(int *argc, char ***argv);
-  
+
+  static void ShmCommsFinalize(void){
+    int status = munmap(ShmCommBuf, MAX_MPI_SHM_BYTES);
+    if (status != 0) {
+      perror("munmap failed ");
+      exit(EXIT_FAILURE);  
+    }
+  }
+
   ////////////////////////////////////////////////
-  // Constructor of any given grid
+  // Constructors to sub-divide a parent communicator
+  // and default to comm world
   ////////////////////////////////////////////////
+  CartesianCommunicator(const std::vector<int> &processors,const CartesianCommunicator &parent,int &srank);
   CartesianCommunicator(const std::vector<int> &pdimensions_in);
+  virtual ~CartesianCommunicator();
+
+ private:
+#if defined (GRID_COMMS_MPI) || defined (GRID_COMMS_MPIT)  || defined (GRID_COMMS_MPI3) 
+  ////////////////////////////////////////////////
+  // Private initialise from an MPI communicator
+  // Can use after an MPI_Comm_split, but hidden from user so private
+  ////////////////////////////////////////////////
+  void InitFromMPICommunicator(const std::vector<int> &processors, MPI_Comm communicator_base);
+#endif
+ public:
   
   ////////////////////////////////////////////////////////////////////////////////////////
   // Wraps MPI_Cart routines, or implements equivalent on other impls
@@ -249,6 +271,28 @@ class CartesianCommunicator {
   // Broadcast a buffer and composite larger
   ////////////////////////////////////////////////////////////
   void Broadcast(int root,void* data, int bytes);
+
+  ////////////////////////////////////////////////////////////
+  // All2All down one dimension
+  ////////////////////////////////////////////////////////////
+  template<class T> void AllToAll(int dim,std::vector<T> &in, std::vector<T> &out){
+    assert(dim>=0);
+    assert(dim<_ndimension);
+    int numnode = _processors[dim];
+    //    std::cerr << " AllToAll in.size()  "<<in.size()<<std::endl;
+    //    std::cerr << " AllToAll out.size() "<<out.size()<<std::endl;
+    assert(in.size()==out.size());
+    uint64_t bytes=sizeof(T);
+    uint64_t words=in.size()/numnode;
+    //    std:: cout << "AllToAll buffer size "<< in.size()*sizeof(T)<<std::endl;
+    //    std:: cout << "AllToAll datum bytes "<< bytes<<std::endl;
+    //    std:: cout << "AllToAll datum count "<< words<<std::endl;
+    assert(numnode * words == in.size());
+    assert(words < (1ULL<<31));
+    AllToAll(dim,(void *)&in[0],(void *)&out[0],words,bytes);
+  }
+  void AllToAll(int dim  ,void *in,void *out,uint64_t words,uint64_t bytes);
+  void AllToAll(void  *in,void *out,uint64_t words         ,uint64_t bytes);
   
   template<class obj> void Broadcast(int root,obj &data)
     {

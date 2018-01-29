@@ -138,11 +138,11 @@ namespace Grid {
       }
     
       //Final trial CG
-      std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradient: Starting final patch-up double-precision solve"<<std::endl;
+      std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradient: NOT Starting final patch-up double-precision solve --FIX THIS, DAN"<<std::endl;
     
-      ConjugateGradient<FieldD> CG_d(Tolerance, MaxInnerIterations);
-      CG_d(Linop_d, src_d_in, sol_d);
-      TotalFinalStepIterations = CG_d.IterationsToComplete;
+      //ConjugateGradient<FieldD> CG_d(Tolerance, MaxInnerIterations);
+      //CG_d(Linop_d, src_d_in, sol_d);
+      TotalFinalStepIterations = 0;//CG_d.IterationsToComplete;
 
       TotalTimer.Stop();
       std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradient: Inner CG iterations " << TotalInnerIterations << " Restarts " << TotalOuterIterations << " Final CG iterations " << TotalFinalStepIterations << std::endl;

@@ -208,7 +208,7 @@ static int Grid_is_initialised = 0;
 
 void Grid_init(int *argc,char ***argv)
 {
-  GridLogger::StopWatch.Start();
+  GridLogger::GlobalStopWatch.Start();
 
   std::string arg;
 
@@ -242,6 +242,12 @@ void Grid_init(int *argc,char ***argv)
     fname<<"Grid.stdout.";
     fname<<CartesianCommunicator::RankWorld();
     fp=freopen(fname.str().c_str(),"w",stdout);
+    assert(fp!=(FILE *)NULL);
+
+    std::ostringstream ename;
+    ename<<"Grid.stderr.";
+    ename<<CartesianCommunicator::RankWorld();
+    fp=freopen(ename.str().c_str(),"w",stderr);
     assert(fp!=(FILE *)NULL);
   }
 
@@ -409,13 +415,26 @@ void Grid_init(int *argc,char ***argv)
 void Grid_finalize(void)
 {
 #if defined (GRID_COMMS_MPI) || defined (GRID_COMMS_MPI3) || defined (GRID_COMMS_MPIT)
-  MPI_Finalize();
+  //MPI_Finalize();
+  CartesianCommunicator::ShmCommsFinalize();
   Grid_unquiesce_nodes();
 #endif
 #if defined (GRID_COMMS_SHMEM)
   shmem_finalize();
 #endif
 }
+void* Grid_finalize(bool dummy)
+{
+#if defined (GRID_COMMS_MPI) || defined (GRID_COMMS_MPI3) || defined (GRID_COMMS_MPIT)
+  //MPI_Finalize();
+  Grid_unquiesce_nodes();
+  return CartesianCommunicator::ShmBufferSelf();
+#endif
+#if defined (GRID_COMMS_SHMEM)
+  shmem_finalize();
+#endif
+}
+
 
 void GridLogLayout() {
     std::cout << GridLogMessage << "Grid Layout\n";

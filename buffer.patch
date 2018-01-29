@@ -1,0 +1,62 @@
+From 3470c7f110ce7da8052022702c648d10d3b075f5 Mon Sep 17 00:00:00 2001
+From: Dan H <goracle@users.noreply.github.com>
+Date: Wed, 3 Jan 2018 19:26:51 -0500
+Subject: [PATCH] Allow for extraction of comms buffer on grid_finalize call.
+
+---
+ lib/communicator/Communicator_base.h |  2 +-
+ lib/util/Init.cc                     | 12 ++++++++++++
+ lib/util/Init.h                      |  1 +
+ 3 files changed, 14 insertions(+), 1 deletion(-)
+
+diff --git a/lib/communicator/Communicator_base.h b/lib/communicator/Communicator_base.h
+index c1503b9f..cdd8e59f 100644
+--- a/lib/communicator/Communicator_base.h
++++ b/lib/communicator/Communicator_base.h
+@@ -138,7 +138,7 @@ class CartesianCommunicator {
+   size_t heap_top;
+   size_t heap_bytes;
+ 
+-  void *ShmBufferSelf(void);
++  static void *ShmBufferSelf(void);
+   void *ShmBuffer(int rank);
+   void *ShmBufferTranslate(int rank,void * local_p);
+   void *ShmBufferMalloc(size_t bytes);
+diff --git a/lib/util/Init.cc b/lib/util/Init.cc
+index b39910e5..fb198a05 100644
+--- a/lib/util/Init.cc
++++ b/lib/util/Init.cc
+@@ -423,6 +423,18 @@ void Grid_finalize(void)
+   shmem_finalize();
+ #endif
+ }
++void* Grid_finalize(bool dummy)
++{
++#if defined (GRID_COMMS_MPI) || defined (GRID_COMMS_MPI3) || defined (GRID_COMMS_MPIT)
++  //MPI_Finalize();
++  Grid_unquiesce_nodes();
++  return CartesianCommunicator::ShmBufferSelf();
++#endif
++#if defined (GRID_COMMS_SHMEM)
++  shmem_finalize();
++#endif
++}
++
+ 
+ void GridLogLayout() {
+     std::cout << GridLogMessage << "Grid Layout\n";
+diff --git a/lib/util/Init.h b/lib/util/Init.h
+index 3da00742..e1ad2e84 100644
+--- a/lib/util/Init.h
++++ b/lib/util/Init.h
+@@ -33,6 +33,7 @@ namespace Grid {
+ 
+   void Grid_init(int *argc,char ***argv);
+   void Grid_finalize(void);
++  void* Grid_finalize(bool dummy);
+ 
+   // internal, controled with --handle
+   void Grid_sa_signal_handler(int sig,siginfo_t *si,void * ptr);
+-- 
+2.14.1
+
