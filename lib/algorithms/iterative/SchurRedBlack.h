@@ -28,7 +28,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifndef GRID_SCHUR_RED_BLACK_H
 #define GRID_SCHUR_RED_BLACK_H
 
-
   /*
    * Red black Schur decomposition
    *
@@ -406,6 +405,118 @@ namespace Grid {
 
       std::cout<<GridLogMessage << "SchurRedBlackDiagTwo solver true unprec resid "<< std::sqrt(nr/ns) <<" nr "<< nr <<" ns "<<ns << std::endl;
     }     
+  };
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Take a matrix and form a Red Black solver calling a Herm solver
+  // Use of RB info prevents making SchurRedBlackSolve conform to standard interface
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////
+  template<class LinopPolicyD, class LinopPolicyF,typename std::enable_if<getPrecision<typename LinopPolicyD::FermionField>::value == 2 && getPrecision<typename LinopPolicyF::FermionField>::value == 1 , int>::type = 0> class SplitConjugateGradientReliableUpdate;
+}
+namespace cps{
+  template<class Field, typename GridPolicies> class deflateGuessRead;
+}
+namespace Grid{
+  template<class Field, class LinopPolicyD, class LinopPolicyF, typename GridPolicies> class SchurRedBlackDiagTwoSplit {
+  private:
+
+    //SplitConjugateGradientReliableUpdate
+    Grid::SplitConjugateGradientReliableUpdate<LinopPolicyD, LinopPolicyF> & _HermitianRBSolver;
+    int CBfactorise;
+    cps::deflateGuessRead<Field, GridPolicies> & _guesser; //assumes single prec. evecs
+  public:
+
+    /////////////////////////////////////////////////////
+    // Wrap the usual normal equations Schur trick
+    /////////////////////////////////////////////////////
+    SchurRedBlackDiagTwoSplit(SplitConjugateGradientReliableUpdate<LinopPolicyD, LinopPolicyF> &HermitianRBSolver, cps::deflateGuessRead<Field, GridPolicies> &guesser):
+      _HermitianRBSolver(HermitianRBSolver),
+      _guesser(guesser)
+    { 
+      CBfactorise=0;
+    };
+
+
+    //split cg version
+    template<class Matrix>
+    void operator() (Matrix & _Matrix,const std::vector<Field> &in, std::vector<Field> &out, bool defl_sub=false){
+
+      // FIXME CGdiagonalMee not implemented virtual function
+      // FIXME use CBfactorise to control schur decomp
+      GridBase *grid = _Matrix.RedBlackGrid();
+      GridBase *fgrid= _Matrix.Grid();
+      const size_t nsolve = in.size();
+
+      SchurDiagTwoOperator<Matrix,Field> _HermOpEO(_Matrix);
+ 
+      Field src_e(grid);
+      std::vector<Field> src_o(nsolve, Field(grid));
+      std::vector<Field> defl(nsolve, Field(grid));
+      Field sol_e(grid);
+      Field sol_o(grid);
+      std::vector<Field>   tmp(nsolve, Field(grid));
+      Field  Mtmp(grid);
+      Field resid(fgrid);
+
+      for(size_t s=0; s<nsolve; s++){
+	pickCheckerboard(Even,src_e,in[s]);
+	pickCheckerboard(Odd ,src_o[s],in[s]);
+	pickCheckerboard(Even,sol_e,out[s]);
+	pickCheckerboard(Odd ,sol_o,out[s]);
+    
+      /////////////////////////////////////////////////////
+      // src_o = Mdag * (source_o - Moe MeeInv source_e)
+      /////////////////////////////////////////////////////
+      _Matrix.MooeeInv(src_e,tmp[s]);     assert(  tmp[s].checkerboard ==Even);
+      _Matrix.Meooe   (tmp[s],Mtmp);      assert( Mtmp.checkerboard ==Odd);
+      tmp[s]=src_o[s]-Mtmp;                  assert(  tmp[s].checkerboard ==Odd);     
+
+      // get the right MpcDag
+      _HermOpEO.MpcDag(tmp[s],src_o[s]);     assert(src_o[s].checkerboard ==Odd);
+      }
+      //////////////////////////////////////////////////////////////
+      // get the subtraction terms for A2A propagator
+      //////////////////////////////////////////////////////////////
+      if(defl_sub) _guesser(src_o, defl);
+      
+      //////////////////////////////////////////////////////////////
+      // Call the red-black solver
+      //////////////////////////////////////////////////////////////
+      std::cout<<GridLogMessage << "SchurRedBlack solver calling the MpcDagMp solver" <<std::endl;
+//      _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
+//      _HermitianRBSolver(_HermOpEO,src_o,tmp);  assert(tmp.checkerboard==Odd);
+      _HermitianRBSolver(src_o,tmp);  
+      for(size_t s=0; s<nsolve; s++){
+	assert(tmp[s].checkerboard==Odd);
+	//Pull low-mode part out of solution
+	if(defl_sub){
+	  assert(defl[s].checkerboard==Odd);
+	  std::cout<<GridLogMessage << "SchurRedBlackDiagTwoSplit, subtracting low mode [" << s << "]." <<std::endl;
+	  axpy(tmp[s], -1.0, defl[s], tmp[s]);
+	}
+	_Matrix.MooeeInv(tmp[s],sol_o);        assert(  sol_o.checkerboard   ==Odd);
+
+      ///////////////////////////////////////////////////
+      // sol_e = M_ee^-1 * ( src_e - Meo sol_o )...
+      ///////////////////////////////////////////////////
+      _Matrix.Meooe(sol_o,tmp[s]);        assert(  tmp[s].checkerboard   ==Even);
+      src_e = src_e-tmp[s];               assert(  src_e.checkerboard ==Even);
+      _Matrix.MooeeInv(src_e,sol_e);   assert(  sol_e.checkerboard ==Even);
+     
+      setCheckerboard(out[s],sol_e); assert(  sol_e.checkerboard ==Even);
+      setCheckerboard(out[s],sol_o); assert(  sol_o.checkerboard ==Odd );
+
+      // Verify the unprec residual
+      _Matrix.M(out[s],resid); 
+      resid = resid-in[s];
+      RealD ns = norm2(in[s]);
+      RealD nr = norm2(resid);
+
+      std::cout<<GridLogMessage << "SchurRedBlackDiagTwoSplit solver true unprec resid [" << s << "] = " << std::sqrt(nr/ns) <<" nr = "<< nr <<" ns = "<<ns << std::endl;
+      }
+    }     
+
+
   };
 
 }
