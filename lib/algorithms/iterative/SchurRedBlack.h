@@ -439,7 +439,7 @@ namespace Grid{
 
     //split cg version
     template<class Matrix>
-    void operator() (Matrix & _Matrix,const std::vector<Field> &in, std::vector<Field> &out, bool defl_sub=false){
+    void operator() (Matrix & _Matrix,const std::vector<Field> &in, std::vector<Field> &out, bool do_defl=false, bool defl_sub=false){
 
       // FIXME CGdiagonalMee not implemented virtual function
       // FIXME use CBfactorise to control schur decomp
@@ -449,17 +449,18 @@ namespace Grid{
 
       SchurDiagTwoOperator<Matrix,Field> _HermOpEO(_Matrix);
  
-      Field src_e(grid);
+      std::vector<Field> src_e(nsolve, Field(grid));
       std::vector<Field> src_o(nsolve, Field(grid));
-      std::vector<Field> defl(nsolve, Field(grid));
+      std::vector<Field> defl(defl_sub? nsolve : 0, Field(grid));
       Field sol_e(grid);
       Field sol_o(grid);
       std::vector<Field>   tmp(nsolve, Field(grid));
       Field  Mtmp(grid);
       Field resid(fgrid);
+      Field resid_rb(grid);
 
       for(size_t s=0; s<nsolve; s++){
-	pickCheckerboard(Even,src_e,in[s]);
+	pickCheckerboard(Even,src_e[s],in[s]);
 	pickCheckerboard(Odd ,src_o[s],in[s]);
 	pickCheckerboard(Even,sol_e,out[s]);
 	pickCheckerboard(Odd ,sol_o,out[s]);
@@ -467,7 +468,7 @@ namespace Grid{
       /////////////////////////////////////////////////////
       // src_o = Mdag * (source_o - Moe MeeInv source_e)
       /////////////////////////////////////////////////////
-      _Matrix.MooeeInv(src_e,tmp[s]);     assert(  tmp[s].checkerboard ==Even);
+      _Matrix.MooeeInv(src_e[s],tmp[s]);     assert(  tmp[s].checkerboard ==Even);
       _Matrix.Meooe   (tmp[s],Mtmp);      assert( Mtmp.checkerboard ==Odd);
       tmp[s]=src_o[s]-Mtmp;                  assert(  tmp[s].checkerboard ==Odd);     
 
@@ -477,17 +478,32 @@ namespace Grid{
       //////////////////////////////////////////////////////////////
       // get the subtraction terms for A2A propagator
       //////////////////////////////////////////////////////////////
-      if(defl_sub) _guesser(src_o, defl);
-      
+      if(do_defl && !defl_sub){
+	_guesser(src_o, tmp);
+      }else if(do_defl && defl_sub){
+	_guesser(src_o, tmp, defl);
+      }else if(!do_defl && defl_sub){
+	_guesser(src_o, defl);
+      }
+
       //////////////////////////////////////////////////////////////
       // Call the red-black solver
       //////////////////////////////////////////////////////////////
       std::cout<<GridLogMessage << "SchurRedBlack solver calling the MpcDagMp solver" <<std::endl;
 //      _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
 //      _HermitianRBSolver(_HermOpEO,src_o,tmp);  assert(tmp.checkerboard==Odd);
-      _HermitianRBSolver(src_o,tmp);  
+      _HermitianRBSolver(src_o,tmp);
       for(size_t s=0; s<nsolve; s++){
 	assert(tmp[s].checkerboard==Odd);
+	//check residual
+	{
+	  _HermOpEO.HermOp(tmp[s], resid_rb);
+	  resid_rb = resid_rb-src_o[s];
+	  RealD ns = norm2(src_o[s]);
+	  RealD nr = norm2(resid_rb);
+	  std::cout<<GridLogMessage << "SchurRedBlackDiagTwoSplit solver true post-solve resid [" << s << "] = " << std::sqrt(nr/ns) <<" nr = "<< nr <<" ns = "<<ns << std::endl;
+	}
+
 	//Pull low-mode part out of solution
 	if(defl_sub){
 	  assert(defl[s].checkerboard==Odd);
@@ -500,8 +516,8 @@ namespace Grid{
       // sol_e = M_ee^-1 * ( src_e - Meo sol_o )...
       ///////////////////////////////////////////////////
       _Matrix.Meooe(sol_o,tmp[s]);        assert(  tmp[s].checkerboard   ==Even);
-      src_e = src_e-tmp[s];               assert(  src_e.checkerboard ==Even);
-      _Matrix.MooeeInv(src_e,sol_e);   assert(  sol_e.checkerboard ==Even);
+      src_e[s] = src_e[s]-tmp[s];               assert(  src_e[s].checkerboard ==Even);
+      _Matrix.MooeeInv(src_e[s],sol_e);   assert(  sol_e.checkerboard ==Even);
      
       setCheckerboard(out[s],sol_e); assert(  sol_e.checkerboard ==Even);
       setCheckerboard(out[s],sol_o); assert(  sol_o.checkerboard ==Odd );
