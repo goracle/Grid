@@ -5,7 +5,7 @@ include $(top_srcdir)/doxygen.inc
 
 bin_SCRIPTS=grid-config
 
-all: version.h all-recursive
+BUILT_SOURCES = version.h
 
 version.h:
 	echo "`git log -n 1 --format=format:"#define GITHASH \\"%H:%d\\"%n" HEAD`" > $(srcdir)/lib/version.h
