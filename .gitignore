@@ -88,11 +88,18 @@ Thumbs.db
 ###################
 build*/*
 
+# bootstrap #
+#############
+*.tar.bz2*
+
 # IDE related files #
 #####################
 *.xcodeproj/*
 build.sh
 .vscode
+*.code-workspace
+.ctags
+tags
 
 # Eigen source #
 ################
@@ -124,3 +131,8 @@ lib/qcd/spin/gamma-gen/*.h
 lib/qcd/spin/gamma-gen/*.cc
 lib/version.h
 
+# vs code editor files #
+########################
+.vscode/
+.vscode/settings.json
+settings.json
