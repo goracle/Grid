@@ -438,23 +438,20 @@ namespace Grid {
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
   template<class LinopPolicyD, class LinopPolicyF,typename std::enable_if<getPrecision<typename LinopPolicyD::FermionField>::value == 2 && getPrecision<typename LinopPolicyF::FermionField>::value == 1 , int>::type = 0> class SplitConjugateGradientReliableUpdate;
 }
-namespace cps{
-  template<class Field, typename GridPolicies> class deflateGuessRead;
-}
 namespace Grid{
-  template<class Field, class LinopPolicyD, class LinopPolicyF, typename GridPolicies> class SchurRedBlackDiagTwoSplit {
+  template<class Field, class LinopPolicyD, class LinopPolicyF, typename GuessType> class SchurRedBlackDiagTwoSplit {
   private:
 
     //SplitConjugateGradientReliableUpdate
     Grid::SplitConjugateGradientReliableUpdate<LinopPolicyD, LinopPolicyF> & _HermitianRBSolver;
     int CBfactorise;
-    cps::deflateGuessRead<Field, GridPolicies> & _guesser; //assumes single prec. evecs
+    GuessType & _guesser; //assumes single prec. evecs
   public:
 
     /////////////////////////////////////////////////////
     // Wrap the usual normal equations Schur trick
     /////////////////////////////////////////////////////
-    SchurRedBlackDiagTwoSplit(SplitConjugateGradientReliableUpdate<LinopPolicyD, LinopPolicyF> &HermitianRBSolver, cps::deflateGuessRead<Field, GridPolicies> &guesser):
+    SchurRedBlackDiagTwoSplit(SplitConjugateGradientReliableUpdate<LinopPolicyD, LinopPolicyF> &HermitianRBSolver, GuessType &guesser):
       _HermitianRBSolver(HermitianRBSolver),
       _guesser(guesser)
     { 
@@ -499,6 +496,7 @@ namespace Grid{
 
       // get the right MpcDag
       _HermOpEO.MpcDag(tmp[s],src_o[s]);     assert(src_o[s].checkerboard ==Odd);
+      if(!do_defl) _Matrix.Mooee(sol_o, tmp[s]); //initial guess taken from output vector.
       }
       //////////////////////////////////////////////////////////////
       // get the subtraction terms for A2A propagator
