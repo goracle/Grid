@@ -258,7 +258,8 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
       mmap_flag |= MAP_POPULATE;
 #endif
 #ifdef MAP_HUGETLB
-      if (flags) mmap_flag |= MAP_HUGETLB;
+      mmap_flag |= MAP_ANONYMOUS;
+      if (flags) {mmap_flag |= MAP_HUGETLB;}
 #endif
       void * ptr =  mmap(NULL,size, PROT_READ | PROT_WRITE, mmap_flag, fd, 0);
       
