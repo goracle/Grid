@@ -486,7 +486,9 @@ namespace Grid{
 	pickCheckerboard(Odd ,src_o[s],in[s]);
 	pickCheckerboard(Even,sol_e,out[s]);
 	pickCheckerboard(Odd ,sol_o,out[s]);
-    
+    	tmp[s] = Zero();
+	if(defl_sub) {defl[s] = Zero(); pickCheckerboard(Odd, defl[s], in[s]);}
+
       /////////////////////////////////////////////////////
       // src_o = Mdag * (source_o - Moe MeeInv source_e)
       /////////////////////////////////////////////////////
