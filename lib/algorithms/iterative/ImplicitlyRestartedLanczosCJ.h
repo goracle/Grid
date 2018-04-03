@@ -1026,7 +1026,7 @@ until convergence
 	std::cout<<GridLogMessage <<"IRL::diagonalize: "<<t1-t0<< "seconds"<<std::endl; t0=t1;
 	  
 	if(prelNconv < Nstop)
-		    std::cout<<GridLogMessage << "Prel. Convergence test ("<<prelNconv<<") failed, skipping a real(and expnesive) one" <<std::endl;
+		    std::cout<<GridLogMessage << "Prel. Convergence test ("<<prelNconv<<") failed, skipping a real(and expensive) one" <<std::endl;
     else
 //	ConvCheck0( Nk, Nm, Qt, evec, eval2, Iconv, Nconv);
 	ConvCheck( Nk, Qt, evec, eval2, Iconv, Nconv);
