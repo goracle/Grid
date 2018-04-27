@@ -106,7 +106,12 @@ namespace Grid {
     };
 
     template<class Matrix>
-      void operator() (Matrix & _Matrix,const Field &in, Field &out){
+    void operator() (Matrix & _Matrix,const Field &in, Field &out){
+      ZeroGuesser guess;
+      (*this)(_Matrix,in,out,guess);
+    }
+    template<class Matrix, class Guesser>
+    void operator() (Matrix & _Matrix,const Field &in, Field &out, Guesser &guess){
 
       // FIXME CGdiagonalMee not implemented virtual function
       // FIXME use CBfactorise to control schur decomp
@@ -128,7 +133,6 @@ namespace Grid {
       pickCheckerboard(Odd ,src_o,in);
       pickCheckerboard(Even,sol_e,out);
       pickCheckerboard(Odd ,sol_o,out);
-
       std::cout << GridLogMessage << " SchurRedBlackStaggeredSolve checkerboards picked" <<std::endl;
     
       /////////////////////////////////////////////////////
@@ -145,6 +149,7 @@ namespace Grid {
       // Call the red-black solver
       //////////////////////////////////////////////////////////////
       std::cout<<GridLogMessage << "SchurRedBlackStaggeredSolver calling the Mpc solver" <<std::endl;
+      guess(src_o,sol_o);
       _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
       std::cout<<GridLogMessage << "SchurRedBlackStaggeredSolver called  the Mpc solver" <<std::endl;
 
@@ -188,7 +193,12 @@ namespace Grid {
     CBfactorise=cb;
   };
     template<class Matrix>
-      void operator() (Matrix & _Matrix,const Field &in, Field &out){
+    void operator() (Matrix & _Matrix,const Field &in, Field &out){
+      ZeroGuesser guess;
+      (*this)(_Matrix,in,out,guess);
+    }
+    template<class Matrix, class Guesser>
+    void operator() (Matrix & _Matrix,const Field &in, Field &out,Guesser &guess){
 
       // FIXME CGdiagonalMee not implemented virtual function
       // FIXME use CBfactorise to control schur decomp
@@ -224,6 +234,7 @@ namespace Grid {
       // Call the red-black solver
       //////////////////////////////////////////////////////////////
       std::cout<<GridLogMessage << "SchurRedBlack solver calling the MpcDagMp solver" <<std::endl;
+      guess(src_o,sol_o);
       _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
 
       ///////////////////////////////////////////////////
@@ -267,7 +278,12 @@ namespace Grid {
     };
 
     template<class Matrix>
-      void operator() (Matrix & _Matrix,const Field &in, Field &out){
+    void operator() (Matrix & _Matrix,const Field &in, Field &out){
+      ZeroGuesser guess;
+      (*this)(_Matrix,in,out,guess);
+    }
+    template<class Matrix,class Guesser>
+    void operator() (Matrix & _Matrix,const Field &in, Field &out,Guesser &guess){
 
       // FIXME CGdiagonalMee not implemented virtual function
       // FIXME use CBfactorise to control schur decomp
@@ -304,6 +320,7 @@ namespace Grid {
       //////////////////////////////////////////////////////////////
       std::cout<<GridLogMessage << "SchurRedBlack solver calling the MpcDagMp solver" <<std::endl;
 //      _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
+      guess(src_o,tmp);
       _HermitianRBSolver(_HermOpEO,src_o,tmp);  assert(tmp.checkerboard==Odd);
       _Matrix.MooeeInv(tmp,sol_o);        assert(  sol_o.checkerboard   ==Odd);
 
@@ -326,6 +343,8 @@ namespace Grid {
       std::cout<<GridLogMessage << "SchurRedBlackDiagTwo solver true unprec resid "<< std::sqrt(nr/ns) <<" nr "<< nr <<" ns "<<ns << std::endl;
     }     
   };
+#endif
+#if 1
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
   // Take a matrix and form a Red Black solver calling a Herm solver
   // Use of RB info prevents making SchurRedBlackSolve conform to standard interface
@@ -346,7 +365,12 @@ namespace Grid {
     };
 
     template<class Matrix>
-      void operator() (Matrix & _Matrix,const Field &in, Field &out){
+    void operator() (Matrix & _Matrix,const Field &in, Field &out){
+      ZeroGuesser guess;
+      (*this)(_Matrix,in,out,guess);
+    }
+    template<class Matrix, class Guesser>
+    void operator() (Matrix & _Matrix,const Field &in, Field &out,Guesser &guess){
 
       // FIXME CGdiagonalMee not implemented virtual function
       // FIXME use CBfactorise to control schur decomp
@@ -384,6 +408,7 @@ namespace Grid {
       std::cout<<GridLogMessage << "SchurRedBlack solver calling the MpcDagMp solver" <<std::endl;
 //      _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
 //      _HermitianRBSolver(_HermOpEO,src_o,tmp);  assert(tmp.checkerboard==Odd);
+      guess(src_o,tmp);
       _HermitianRBSolver(src_o,tmp);  assert(tmp.checkerboard==Odd);
       _Matrix.MooeeInv(tmp,sol_o);        assert(  sol_o.checkerboard   ==Odd);
 
@@ -413,23 +438,20 @@ namespace Grid {
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
   template<class LinopPolicyD, class LinopPolicyF,typename std::enable_if<getPrecision<typename LinopPolicyD::FermionField>::value == 2 && getPrecision<typename LinopPolicyF::FermionField>::value == 1 , int>::type = 0> class SplitConjugateGradientReliableUpdate;
 }
-namespace cps{
-  template<class Field, typename GridPolicies> class deflateGuessRead;
-}
 namespace Grid{
-  template<class Field, class LinopPolicyD, class LinopPolicyF, typename GridPolicies> class SchurRedBlackDiagTwoSplit {
+  template<class Field, class LinopPolicyD, class LinopPolicyF, typename GuessType> class SchurRedBlackDiagTwoSplit {
   private:
 
     //SplitConjugateGradientReliableUpdate
     Grid::SplitConjugateGradientReliableUpdate<LinopPolicyD, LinopPolicyF> & _HermitianRBSolver;
     int CBfactorise;
-    cps::deflateGuessRead<Field, GridPolicies> & _guesser; //assumes single prec. evecs
+    GuessType & _guesser; //assumes single prec. evecs
   public:
 
     /////////////////////////////////////////////////////
     // Wrap the usual normal equations Schur trick
     /////////////////////////////////////////////////////
-    SchurRedBlackDiagTwoSplit(SplitConjugateGradientReliableUpdate<LinopPolicyD, LinopPolicyF> &HermitianRBSolver, cps::deflateGuessRead<Field, GridPolicies> &guesser):
+    SchurRedBlackDiagTwoSplit(SplitConjugateGradientReliableUpdate<LinopPolicyD, LinopPolicyF> &HermitianRBSolver, GuessType &guesser):
       _HermitianRBSolver(HermitianRBSolver),
       _guesser(guesser)
     { 
@@ -464,7 +486,9 @@ namespace Grid{
 	pickCheckerboard(Odd ,src_o[s],in[s]);
 	pickCheckerboard(Even,sol_e,out[s]);
 	pickCheckerboard(Odd ,sol_o,out[s]);
-    
+    	tmp[s] = Zero();
+	if(defl_sub) {defl[s] = Zero(); pickCheckerboard(Odd, defl[s], in[s]);}
+
       /////////////////////////////////////////////////////
       // src_o = Mdag * (source_o - Moe MeeInv source_e)
       /////////////////////////////////////////////////////
@@ -474,6 +498,7 @@ namespace Grid{
 
       // get the right MpcDag
       _HermOpEO.MpcDag(tmp[s],src_o[s]);     assert(src_o[s].checkerboard ==Odd);
+      if(!do_defl) _Matrix.Mooee(sol_o, tmp[s]); //initial guess taken from output vector.
       }
       //////////////////////////////////////////////////////////////
       // get the subtraction terms for A2A propagator
