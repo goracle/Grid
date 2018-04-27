@@ -28,6 +28,8 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifndef GRID_SCHUR_RED_BLACK_H
 #define GRID_SCHUR_RED_BLACK_H
 
+#include <Grid/algorithms/iterative/Deflation.h>
+
   /*
    * Red black Schur decomposition
    *

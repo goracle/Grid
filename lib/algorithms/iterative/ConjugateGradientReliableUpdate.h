@@ -53,7 +53,7 @@ namespace Grid {
     RealD fallback_transition_tol;
 
     
-    ConjugateGradientReliableUpdate(RealD tol, Integer maxit, RealD _delta, GridBase* _sp_grid, LinearOperatorBase<FieldF> &_Linop_f, LinearOperatorBase<FieldD> &_Linop_d, bool err_on_no_conv = true)
+    ConjugateGradientReliableUpdate(RealD tol, Integer maxit, RealD _delta, GridBase* _sp_grid, LinearOperatorBase<FieldF> &_Linop_f, LinearOperatorBase<FieldD> &_Linop_d, bool err_on_no_conv = true, bool _DoFinalCleanup = false)
       : Tolerance(tol),
         MaxIterations(maxit),
 	Delta(_delta),
@@ -61,7 +61,7 @@ namespace Grid {
 	Linop_d(_Linop_d),
 	SinglePrecGrid(_sp_grid),
         ErrorOnNoConverge(err_on_no_conv),
-	DoFinalCleanup(true),
+	DoFinalCleanup(_DoFinalCleanup), //defaults to false since this is how I tuned the sloppy solves... -dsh
 	Linop_fallback(NULL)
     {};
 
@@ -200,7 +200,7 @@ namespace Grid {
 
 	  IterationsToComplete = k;	
 	  ReliableUpdatesPerformed = l;
-	  DoFinalCleanup = false; //--dsh
+	  //DoFinalCleanup = false; //--dsh
 	  if(DoFinalCleanup){
 	    //Do a final CG to cleanup
 	    std::cout << GridLogMessage << "ConjugateGradientReliableUpdate performing final cleanup.\n";

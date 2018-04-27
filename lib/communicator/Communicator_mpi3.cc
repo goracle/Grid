@@ -112,8 +112,8 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
 
   MPI_Initialized(&flag); // needed to coexist with other libs apparently
   if ( !flag ) {
-    MPI_Init_thread(argc,argv,MPI_THREAD_MULTIPLE,&provided);
-    assert (provided == MPI_THREAD_MULTIPLE);
+    MPI_Init_thread(argc,argv, MPI_THREAD_FUNNELED,&provided);
+    assert (provided == MPI_THREAD_FUNNELED);
   }
 
   Grid_quiesce_nodes();
