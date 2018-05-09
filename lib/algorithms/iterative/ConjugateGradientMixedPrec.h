@@ -42,6 +42,7 @@ namespace Grid {
     RealD OuterLoopNormMult; //Stop the outer loop and move to a final double prec solve when the residual is OuterLoopNormMult * Tolerance
     LinearOperatorBase<FieldF> &Linop_f;
     LinearOperatorBase<FieldD> &Linop_d;
+    bool DoFinalCleanup, ErrorOnNoConverge;
 
     Integer TotalInnerIterations; //Number of inner CG iterations
     Integer TotalOuterIterations; //Number of restarts
@@ -50,10 +51,11 @@ namespace Grid {
     //Option to speed up *inner single precision* solves using a LinearFunction that produces a guess
     LinearFunction<FieldF> *guesser;
     
-    MixedPrecisionConjugateGradient(RealD tol, Integer maxinnerit, Integer maxouterit, GridBase* _sp_grid, LinearOperatorBase<FieldF> &_Linop_f, LinearOperatorBase<FieldD> &_Linop_d) :
+    MixedPrecisionConjugateGradient(RealD tol, Integer maxinnerit, Integer maxouterit, GridBase* _sp_grid, LinearOperatorBase<FieldF> &_Linop_f, LinearOperatorBase<FieldD> &_Linop_d,
+				    bool err_on_no_conv = true, bool _DoFinalCleanup = false) :
       Linop_f(_Linop_f), Linop_d(_Linop_d),
       Tolerance(tol), InnerTolerance(tol), MaxInnerIterations(maxinnerit), MaxOuterIterations(maxouterit), SinglePrecGrid(_sp_grid),
-      OuterLoopNormMult(100.), guesser(NULL){ };
+      OuterLoopNormMult(100.), guesser(NULL), DoFinalCleanup(_DoFinalCleanup), ErrorOnNoConverge(err_on_no_conv){ };
 
     void useGuesser(LinearFunction<FieldF> &g){
       guesser = &g;
@@ -138,12 +140,15 @@ namespace Grid {
       }
     
       //Final trial CG
-      std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradient: NOT Starting final patch-up double-precision solve --FIX THIS, DAN"<<std::endl;
-    
-      //ConjugateGradient<FieldD> CG_d(Tolerance, MaxInnerIterations);
-      //CG_d(Linop_d, src_d_in, sol_d);
-      TotalFinalStepIterations = 0;//CG_d.IterationsToComplete;
-
+      if(DoFinalCleanup){
+	std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradient: Starting final patch-up double-precision solve"<<std::endl;
+	ConjugateGradient<FieldD> CG_d(Tolerance, MaxInnerIterations);
+	CG_d(Linop_d, src_d_in, sol_d);
+	TotalFinalStepIterations = CG_d.IterationsToComplete;
+      }else{
+	std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradient: Skipping final patch-up double-precision solve"<<std::endl;
+	TotalFinalStepIterations = 0;
+      }
       TotalTimer.Stop();
       std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradient: Inner CG iterations " << TotalInnerIterations << " Restarts " << TotalOuterIterations << " Final CG iterations " << TotalFinalStepIterations << std::endl;
       std::cout<<GridLogMessage<<"MixedPrecisionConjugateGradient: Total time " << TotalTimer.Elapsed() << " Precision change " << PrecChangeTimer.Elapsed() << " Inner CG total " << InnerCGtimer.Elapsed() << std::endl;

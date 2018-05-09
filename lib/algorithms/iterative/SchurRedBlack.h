@@ -438,14 +438,14 @@ namespace Grid {
   // Take a matrix and form a Red Black solver calling a Herm solver
   // Use of RB info prevents making SchurRedBlackSolve conform to standard interface
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
-  template<class LinopPolicyD, class LinopPolicyF,typename std::enable_if<getPrecision<typename LinopPolicyD::FermionField>::value == 2 && getPrecision<typename LinopPolicyF::FermionField>::value == 1 , int>::type = 0> class SplitConjugateGradientReliableUpdate;
+  template<class LinopPolicyD, class LinopPolicyF,typename std::enable_if<getPrecision<typename LinopPolicyD::FermionField>::value == 2 && getPrecision<typename LinopPolicyF::FermionField>::value == 1 , int>::type = 0> class SplitConjugateGradient;
 }
 namespace Grid{
   template<class Field, class LinopPolicyD, class LinopPolicyF, typename GuessType> class SchurRedBlackDiagTwoSplit {
   private:
 
-    //SplitConjugateGradientReliableUpdate
-    Grid::SplitConjugateGradientReliableUpdate<LinopPolicyD, LinopPolicyF> & _HermitianRBSolver;
+    //SplitConjugateGradient
+    Grid::SplitConjugateGradient<LinopPolicyD, LinopPolicyF> & _HermitianRBSolver;
     int CBfactorise;
     GuessType & _guesser; //assumes single prec. evecs
   public:
@@ -453,7 +453,7 @@ namespace Grid{
     /////////////////////////////////////////////////////
     // Wrap the usual normal equations Schur trick
     /////////////////////////////////////////////////////
-    SchurRedBlackDiagTwoSplit(SplitConjugateGradientReliableUpdate<LinopPolicyD, LinopPolicyF> &HermitianRBSolver, GuessType &guesser):
+    SchurRedBlackDiagTwoSplit(SplitConjugateGradient<LinopPolicyD, LinopPolicyF> &HermitianRBSolver, GuessType &guesser):
       _HermitianRBSolver(HermitianRBSolver),
       _guesser(guesser)
     { 
