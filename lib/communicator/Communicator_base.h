@@ -45,6 +45,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #include <mpp/shmem.h>
 #endif
 #include <sys/mman.h>
+
 namespace Grid {
 
 class CartesianCommunicator {
@@ -148,7 +149,6 @@ class CartesianCommunicator {
   // Must call in Grid startup
   ////////////////////////////////////////////////
   static void Init(int *argc, char ***argv);
-
   static void ShmCommsFinalize(void){
     int status = munmap(ShmCommBuf, MAX_MPI_SHM_BYTES);
     if (status != 0) {
@@ -156,6 +156,7 @@ class CartesianCommunicator {
       exit(EXIT_FAILURE);  
     }
   }
+
 
   ////////////////////////////////////////////////
   // Constructors to sub-divide a parent communicator

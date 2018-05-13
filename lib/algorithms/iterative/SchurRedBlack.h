@@ -28,7 +28,6 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifndef GRID_SCHUR_RED_BLACK_H
 #define GRID_SCHUR_RED_BLACK_H
 
-#include <Grid/algorithms/iterative/Deflation.h>
 
   /*
    * Red black Schur decomposition
@@ -108,12 +107,7 @@ namespace Grid {
     };
 
     template<class Matrix>
-    void operator() (Matrix & _Matrix,const Field &in, Field &out){
-      ZeroGuesser guess;
-      (*this)(_Matrix,in,out,guess);
-    }
-    template<class Matrix, class Guesser>
-    void operator() (Matrix & _Matrix,const Field &in, Field &out, Guesser &guess){
+      void operator() (Matrix & _Matrix,const Field &in, Field &out){
 
       // FIXME CGdiagonalMee not implemented virtual function
       // FIXME use CBfactorise to control schur decomp
@@ -135,6 +129,7 @@ namespace Grid {
       pickCheckerboard(Odd ,src_o,in);
       pickCheckerboard(Even,sol_e,out);
       pickCheckerboard(Odd ,sol_o,out);
+
       std::cout << GridLogMessage << " SchurRedBlackStaggeredSolve checkerboards picked" <<std::endl;
     
       /////////////////////////////////////////////////////
@@ -151,7 +146,6 @@ namespace Grid {
       // Call the red-black solver
       //////////////////////////////////////////////////////////////
       std::cout<<GridLogMessage << "SchurRedBlackStaggeredSolver calling the Mpc solver" <<std::endl;
-      guess(src_o,sol_o);
       _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
       std::cout<<GridLogMessage << "SchurRedBlackStaggeredSolver called  the Mpc solver" <<std::endl;
 
@@ -195,12 +189,7 @@ namespace Grid {
     CBfactorise=cb;
   };
     template<class Matrix>
-    void operator() (Matrix & _Matrix,const Field &in, Field &out){
-      ZeroGuesser guess;
-      (*this)(_Matrix,in,out,guess);
-    }
-    template<class Matrix, class Guesser>
-    void operator() (Matrix & _Matrix,const Field &in, Field &out,Guesser &guess){
+      void operator() (Matrix & _Matrix,const Field &in, Field &out){
 
       // FIXME CGdiagonalMee not implemented virtual function
       // FIXME use CBfactorise to control schur decomp
@@ -236,7 +225,6 @@ namespace Grid {
       // Call the red-black solver
       //////////////////////////////////////////////////////////////
       std::cout<<GridLogMessage << "SchurRedBlack solver calling the MpcDagMp solver" <<std::endl;
-      guess(src_o,sol_o);
       _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
 
       ///////////////////////////////////////////////////
@@ -280,12 +268,7 @@ namespace Grid {
     };
 
     template<class Matrix>
-    void operator() (Matrix & _Matrix,const Field &in, Field &out){
-      ZeroGuesser guess;
-      (*this)(_Matrix,in,out,guess);
-    }
-    template<class Matrix,class Guesser>
-    void operator() (Matrix & _Matrix,const Field &in, Field &out,Guesser &guess){
+      void operator() (Matrix & _Matrix,const Field &in, Field &out){
 
       // FIXME CGdiagonalMee not implemented virtual function
       // FIXME use CBfactorise to control schur decomp
@@ -322,7 +305,6 @@ namespace Grid {
       //////////////////////////////////////////////////////////////
       std::cout<<GridLogMessage << "SchurRedBlack solver calling the MpcDagMp solver" <<std::endl;
 //      _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
-      guess(src_o,tmp);
       _HermitianRBSolver(_HermOpEO,src_o,tmp);  assert(tmp.checkerboard==Odd);
       _Matrix.MooeeInv(tmp,sol_o);        assert(  sol_o.checkerboard   ==Odd);
 
@@ -345,8 +327,6 @@ namespace Grid {
       std::cout<<GridLogMessage << "SchurRedBlackDiagTwo solver true unprec resid "<< std::sqrt(nr/ns) <<" nr "<< nr <<" ns "<<ns << std::endl;
     }     
   };
-#endif
-#if 1
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
   // Take a matrix and form a Red Black solver calling a Herm solver
   // Use of RB info prevents making SchurRedBlackSolve conform to standard interface
@@ -367,12 +347,7 @@ namespace Grid {
     };
 
     template<class Matrix>
-    void operator() (Matrix & _Matrix,const Field &in, Field &out){
-      ZeroGuesser guess;
-      (*this)(_Matrix,in,out,guess);
-    }
-    template<class Matrix, class Guesser>
-    void operator() (Matrix & _Matrix,const Field &in, Field &out,Guesser &guess){
+      void operator() (Matrix & _Matrix,const Field &in, Field &out){
 
       // FIXME CGdiagonalMee not implemented virtual function
       // FIXME use CBfactorise to control schur decomp
@@ -410,7 +385,6 @@ namespace Grid {
       std::cout<<GridLogMessage << "SchurRedBlack solver calling the MpcDagMp solver" <<std::endl;
 //      _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
 //      _HermitianRBSolver(_HermOpEO,src_o,tmp);  assert(tmp.checkerboard==Odd);
-      guess(src_o,tmp);
       _HermitianRBSolver(src_o,tmp);  assert(tmp.checkerboard==Odd);
       _Matrix.MooeeInv(tmp,sol_o);        assert(  sol_o.checkerboard   ==Odd);
 
