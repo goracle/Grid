@@ -246,7 +246,25 @@ void CartesianCommunicator::InitFromMPICommunicator(const std::vector<int> &proc
   }
 
   std::vector<int> periodic(_ndimension,1);
-  MPI_Cart_create(communicator_base, _ndimension,&_processors[0],&periodic[0],0,&communicator);
+  if(_Nprocessors==1){
+    int size_t; //ha
+    int before;
+    MPI_Comm_rank(communicator_base, &before);
+    std::cout << GridLogMessage << "rankbefore=" << before << std::endl;
+    MPI_Comm_size(communicator_base, &size_t);
+    std::cout << GridLogMessage << "size of base communicator" << size_t << std::endl;
+    MPI_Comm temp;
+    int rank;
+    MPI_Comm_rank(communicator_base,&rank);
+    MPI_Comm_split(communicator_base,rank, rank, &temp);
+    int size;
+    MPI_Comm_size(temp,&size);
+    assert(size==1);
+    MPI_Cart_create(temp, _ndimension,&_processors[0],&periodic[0],0,&communicator);
+    MPI_Comm_free(&temp);
+  }else{
+    MPI_Cart_create(communicator_base, _ndimension,&_processors[0],&periodic[0],0,&communicator);
+  }
   MPI_Comm_rank(communicator,&_processor);
   MPI_Cart_coords(communicator,_processor,_ndimension,&_processor_coor[0]);
 
