@@ -176,11 +176,12 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,
   MPI_Comm comm_split;
   if ( Nchild > 1 ) { 
 
-    if(0){
+    if(1){
       std::cout << GridLogMessage<<"Child communicator of "<< std::hex << parent.communicator << std::dec<<std::endl;
       std::cout << GridLogMessage<<" parent grid["<< parent._ndimension<<"]    ";
       for(int d=0;d<parent._ndimension;d++)  std::cout << parent._processors[d] << " ";
       std::cout<<std::endl;
+      std::cout << GridLogMessage<<"Nparent" << Nparent  << std::endl;
       
       std::cout << GridLogMessage<<" child grid["<< _ndimension <<"]    ";
       for(int d=0;d<processors.size();d++)  std::cout << processors[d] << " ";
@@ -245,11 +246,25 @@ void CartesianCommunicator::InitFromMPICommunicator(const std::vector<int> &proc
     _Nprocessors*=_processors[i];
   }
 
+  int size_t=0;
+  MPI_Comm_size(communicator_base, &size_t);
+
   std::vector<int> periodic(_ndimension,1);
+  if(size_t > _Nprocessors){
+    nodest=true;
+    return;
+    int rank;
+    MPI_Comm_rank(communicator_base, &rank);
+    MPI_Comm temp;
+    int ierr= MPI_Comm_split(communicator_base,rank,rank,&temp);
+  MPI_Cart_create(temp, _ndimension,&_processors[0],&periodic[0],0 ,&communicator);
+  MPI_Comm_rank(communicator,&_processor);
+  MPI_Cart_coords(communicator,_processor,_ndimension,&_processor_coor[0]);
+  } else{
   MPI_Cart_create(communicator_base, _ndimension,&_processors[0],&periodic[0],0 ,&communicator);
   MPI_Comm_rank(communicator,&_processor);
   MPI_Cart_coords(communicator,_processor,_ndimension,&_processor_coor[0]);
-
+}
   if ( 0 && (communicator_base != communicator_world) ) {
     std::cout << "InitFromMPICommunicator Cartesian communicator created with a non-world communicator"<<std::endl;
     

@@ -128,7 +128,7 @@ namespace Grid {
     double MFlops(void) {return flops/usec;}
     double USec(void)   {return (double)usec;}    
 
-    FFT ( GridCartesian * grid ) :
+    FFT ( GridCartesian * grid, GridCartesian * parent = NULL ) :
     vgrid(grid),
     Nd(grid->_ndimension),
     dimensions(grid->_fdimensions),
@@ -138,7 +138,10 @@ namespace Grid {
       flops=0;
       usec =0;
       std::vector<int> layout(Nd,1);
-      sgrid = new GridCartesian(dimensions,layout,processors);
+      if(parent==NULL)
+	sgrid = new GridCartesian(dimensions,layout,processors);
+      else
+	sgrid = new GridCartesian(dimensions,layout,processors, *parent);
     };
     
     ~FFT ( void)  {

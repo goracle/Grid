@@ -57,7 +57,7 @@ CartesianCommunicator::~CartesianCommunicator()
 {
   int MPI_is_finalised;
   MPI_Finalized(&MPI_is_finalised);
-  if (communicator && !MPI_is_finalised)
+  if (communicator!=MPI_COMM_NULL && communicator && !nodest && !MPI_is_finalised)
     MPI_Comm_free(&communicator);
 }
 

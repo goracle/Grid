@@ -76,6 +76,7 @@ class CartesianCommunicator {
   int              _processor;       // linear processor rank
   std::vector<int> _processor_coor;  // linear processor coordinate
   unsigned long _ndimension;
+  bool nodest=false;
 
 #if defined (GRID_COMMS_MPI) || defined (GRID_COMMS_MPI3) || defined (GRID_COMMS_MPIT)
   static MPI_Comm communicator_world;
