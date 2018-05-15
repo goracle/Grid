@@ -54,7 +54,8 @@ void *CartesianCommunicator::ShmBufferMalloc(size_t bytes){
   if (heap_bytes >= MAX_MPI_SHM_BYTES) {
     std::cout<< " ShmBufferMalloc exceeded shared heap size -- try increasing with --shm <MB> flag" <<std::endl;
     std::cout<< " Parameter specified in units of MB (megabytes) " <<std::endl;
-    std::cout<< " Current value is " << (MAX_MPI_SHM_BYTES/(1024*1024)) <<std::endl;
+    std::cout<< " Current value is " << (MAX_MPI_SHM_BYTES/(1024*1024)) << " MB" <<std::endl;
+    std::cout<< " Requested value is " << heap_bytes << " bytes" <<std::endl;
     assert(heap_bytes<MAX_MPI_SHM_BYTES);
   }
   return ptr;
