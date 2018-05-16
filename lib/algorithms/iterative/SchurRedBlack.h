@@ -430,7 +430,7 @@ namespace Grid{
     /////////////////////////////////////////////////////
     // Wrap the usual normal equations Schur trick
     /////////////////////////////////////////////////////
-    SchurRedBlackDiagTwoSplit(SplitConjugateGradient<LinopPolicyD, LinopPolicyF>,
+    SchurRedBlackDiagTwoSplit(SplitConjugateGradient<LinopPolicyD, LinopPolicyF> &HermitianRBSolver , 
 //LinearFunction<Field> &HermitianRBSolver,
  GuessType &guesser):
       _HermitianRBSolver(HermitianRBSolver),
@@ -449,7 +449,7 @@ namespace Grid{
       GridBase *grid = _Matrix.RedBlackGrid();
       GridBase *fgrid= _Matrix.Grid();
       const size_t nsolve = in.size();
-      assert(nsolve==1); //fix this
+    //  assert(nsolve==1); //fix this
 
       SchurDiagTwoOperator<Matrix,Field> _HermOpEO(_Matrix);
  
@@ -499,7 +499,8 @@ namespace Grid{
       std::cout<<GridLogMessage << "SchurRedBlack solver calling the MpcDagMp solver" <<std::endl;
 //      _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
 //      _HermitianRBSolver(_HermOpEO,src_o,tmp);  assert(tmp.checkerboard==Odd);
-      _HermitianRBSolver(src_o[0],tmp[0]);
+      //_HermitianRBSolver(src_o[0],tmp[0]);
+      _HermitianRBSolver(src_o,tmp);
       for(size_t s=0; s<nsolve; s++){
 	assert(tmp[s].checkerboard==Odd);
 	//check residual
