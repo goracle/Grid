@@ -419,10 +419,10 @@ namespace Grid{
   private:
 
     //SplitConjugateGradient
-    //Grid::SplitConjugateGradient<LinopPolicyD, LinopPolicyF> & _HermitianRBSolver;
+    Grid::SplitConjugateGradient<LinopPolicyD, LinopPolicyF> & _HermitianRBSolver;
     typedef typename LinopPolicyD::FermionField FermionFieldD;
     typedef typename LinopPolicyF::FermionField FermionFieldF;
-    LinearFunction<Field> & _HermitianRBSolver;
+    //LinearFunction<Field> & _HermitianRBSolver;
     int CBfactorise;
     GuessType & _guesser; //assumes single prec. evecs
   public:
@@ -430,7 +430,9 @@ namespace Grid{
     /////////////////////////////////////////////////////
     // Wrap the usual normal equations Schur trick
     /////////////////////////////////////////////////////
-    SchurRedBlackDiagTwoSplit(LinearFunction<Field> &HermitianRBSolver, GuessType &guesser):
+    SchurRedBlackDiagTwoSplit(SplitConjugateGradient<LinopPolicyD, LinopPolicyF>,
+//LinearFunction<Field> &HermitianRBSolver,
+ GuessType &guesser):
       _HermitianRBSolver(HermitianRBSolver),
       _guesser(guesser)
     { 
