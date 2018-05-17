@@ -217,6 +217,9 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,
   //////////////////////////////////////////////////////////////////////////////////////////////////////
   InitFromMPICommunicator(processors,comm_split);
 
+//free the temp comm
+  MPI_Comm_free(&comm_split);
+
   if(0){ 
     std::cout << " ndim " <<_ndimension<<" " << parent._ndimension << std::endl;
     for(int d=0;d<processors.size();d++){
