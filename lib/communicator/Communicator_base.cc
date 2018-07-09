@@ -174,6 +174,7 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,
   Lexicographic::IndexFromCoorReversed(scoor,srank,ssize);
 
   MPI_Comm comm_split;
+bool split_done = false;
   if ( Nchild > 1 ) { 
 
     if(1){
@@ -201,6 +202,7 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,
     }
 
     int ierr= MPI_Comm_split(parent.communicator,srank,crank,&comm_split);
+	split_done = true;
     assert(ierr==0);
     //////////////////////////////////////////////////////////////////////////////////////////////////////
     // Declare victory
@@ -218,7 +220,7 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,
   InitFromMPICommunicator(processors,comm_split);
 
 //free the temp comm
-  MPI_Comm_free(&comm_split);
+  if(split_done)MPI_Comm_free(&comm_split);
 
   if(0){ 
     std::cout << " ndim " <<_ndimension<<" " << parent._ndimension << std::endl;
