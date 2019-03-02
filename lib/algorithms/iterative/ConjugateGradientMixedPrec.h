@@ -51,11 +51,10 @@ namespace Grid {
     //Option to speed up *inner single precision* solves using a LinearFunction that produces a guess
     LinearFunction<FieldF> *guesser;
     
-    MixedPrecisionConjugateGradient(RealD tol, Integer maxinnerit, Integer maxouterit, GridBase* _sp_grid, LinearOperatorBase<FieldF> &_Linop_f, LinearOperatorBase<FieldD> &_Linop_d,
-				    bool err_on_no_conv = true, bool _DoFinalCleanup = false) :
+    MixedPrecisionConjugateGradient(RealD tol, Integer maxinnerit, Integer maxouterit, GridBase* _sp_grid, LinearOperatorBase<FieldF> &_Linop_f, LinearOperatorBase<FieldD> &_Linop_d, bool err_on_no_conv = true, bool _DoFinalCleanup = false, RealD _OuterLoopNormMult = 100) :
       Linop_f(_Linop_f), Linop_d(_Linop_d),
       Tolerance(tol), InnerTolerance(tol), MaxInnerIterations(maxinnerit), MaxOuterIterations(maxouterit), SinglePrecGrid(_sp_grid),
-      OuterLoopNormMult(100.), guesser(NULL), DoFinalCleanup(_DoFinalCleanup), ErrorOnNoConverge(err_on_no_conv){ };
+      OuterLoopNormMult(_OuterLoopNormMult), guesser(NULL), DoFinalCleanup(_DoFinalCleanup), ErrorOnNoConverge(err_on_no_conv){ };
 
     void useGuesser(LinearFunction<FieldF> &g){
       guesser = &g;

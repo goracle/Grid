@@ -61,7 +61,7 @@ namespace Grid {
 	Linop_d(_Linop_d),
 	SinglePrecGrid(_sp_grid),
         ErrorOnNoConverge(err_on_no_conv),
-	DoFinalCleanup(_DoFinalCleanup), //defaults to false since this is how I tuned the sloppy solves... -dsh
+	DoFinalCleanup(_DoFinalCleanup),
 	Linop_fallback(NULL)
     {};
 
@@ -200,7 +200,6 @@ namespace Grid {
 
 	  IterationsToComplete = k;	
 	  ReliableUpdatesPerformed = l;
-	  //DoFinalCleanup = false; //--dsh
 	  if(DoFinalCleanup){
 	    //Do a final CG to cleanup
 	    std::cout << GridLogMessage << "ConjugateGradientReliableUpdate performing final cleanup.\n";
@@ -209,9 +208,9 @@ namespace Grid {
 	    CG(Linop_d,src,psi);
 	    IterationsToCleanup = CG.IterationsToComplete;
 	  }
-	  //else if (ErrorOnNoConverge) assert(true_residual / Tolerance < 10000.0); //--dsh
+	  else if (ErrorOnNoConverge) assert(true_residual / Tolerance < 10000.0);
 
-	  std::cout << GridLogMessage << "ConjugateGradientReliableUpdate complete.  FIX THIS, DAN\n";
+	  std::cout << GridLogMessage << "ConjugateGradientReliableUpdate complete.\n";
 	  return;
 	}
 	else if(cp < Delta * MaxResidSinceLastRelUp) { //reliable update
@@ -248,7 +247,7 @@ namespace Grid {
       std::cout << GridLogMessage << "ConjugateGradientReliableUpdate did NOT converge"
 		<< std::endl;
       
-      //if (ErrorOnNoConverge) assert(0); --dsh
+      if (ErrorOnNoConverge) assert(0);
       IterationsToComplete = k;
       ReliableUpdatesPerformed = l;      
     }    

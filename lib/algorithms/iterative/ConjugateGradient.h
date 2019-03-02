@@ -159,7 +159,7 @@ class ConjugateGradient : public OperatorFunction<Field> {
     std::cout << GridLogMessage << "ConjugateGradient did NOT converge"
               << std::endl;
 
-    //if (ErrorOnNoConverge) assert(0);
+    if (ErrorOnNoConverge) assert(0);
     IterationsToComplete = k;
 
   }
