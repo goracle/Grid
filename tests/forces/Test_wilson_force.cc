@@ -50,7 +50,12 @@ int main (int argc, char ** argv)
   std::vector<int> seeds({1,2,3,4});
 
   GridParallelRNG          pRNG(&Grid);
-  pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
+  std::vector<int> vrand(4);
+  std::srand(std::time(0));
+  std::generate(vrand.begin(), vrand.end(), std::rand);
+  std::cout << GridLogMessage << vrand << std::endl;
+  pRNG.SeedFixedIntegers(vrand);
+  //pRNG.SeedFixedIntegers(std::vector<int>({45,12,81,9}));
 
   LatticeFermion phi        (&Grid); gaussian(pRNG,phi);
   LatticeFermion Mphi       (&Grid); 
@@ -168,6 +173,13 @@ int main (int argc, char ** argv)
     // Update PF action density
     dS = dS+trace(mommu*forcemu)*dt;
 
+    // Smom = - P^2 ;
+    //  dSmom = trace ( (mom+f/2dt)(mom+f/2dt) ) - trace mom*mom
+    //        = trace(mom*f) dt  + 0.25*dt*dt * trace(f*f).
+    //
+    // can we improve on this in HMC???
+    //
+    // 
     dSmom  = dSmom  - trace(mommu*forcemu) * dt;
     dSmom2 = dSmom2 - trace(forcemu*forcemu) *(0.25* dt*dt);
 

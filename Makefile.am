@@ -1,14 +1,9 @@
 # additional include paths necessary to compile the C++ library
-SUBDIRS = lib benchmarks tests extras
+SUBDIRS = Grid HMC Hadrons benchmarks tests
 
 include $(top_srcdir)/doxygen.inc
 
 bin_SCRIPTS=grid-config
-
-all: version.h all-recursive
-
-version.h:
-	echo "`git log -n 1 --format=format:"#define GITHASH \\"%H:%d\\"%n" HEAD`" > $(srcdir)/lib/version.h
 
 .PHONY: bench check tests doxygen-run doxygen-doc $(DX_PS_GOAL) $(DX_PDF_GOAL)
 
