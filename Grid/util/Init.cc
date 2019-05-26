@@ -225,6 +225,7 @@ void Grid_init(int *argc,char ***argv)
 
   if( GridCmdOptionExists(*argv,*argv+*argc,"--shm-hugepages") ){
     GlobalSharedMemory::Hugepages = 1;
+    CartesianCommunicator::Hugepages = 1;
   }
 
 
@@ -437,6 +438,20 @@ void Grid_finalize(void)
   shmem_finalize();
 #endif
 }
+
+void* Grid_finalize(bool dummy)
+{
+#if defined (GRID_COMMS_MPI) || defined (GRID_COMMS_MPI3) || defined (GRID_COMMS_MPIT)
+  //MPI_Finalize();
+  Grid_unquiesce_nodes();
+  return CartesianCommunicator::ShmBufferSelf();
+#endif
+#if defined (GRID_COMMS_SHMEM)
+  shmem_finalize();
+#endif
+}
+
+
 
 void GridLogLayout() {
     std::cout << GridLogMessage << "Grid Layout\n";
