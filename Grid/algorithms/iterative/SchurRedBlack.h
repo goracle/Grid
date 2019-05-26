@@ -93,16 +93,16 @@ namespace Grid {
   // Take a matrix and form a Red Black solver calling a Herm solver
   // Use of RB info prevents making SchurRedBlackSolve conform to standard interface
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
-  template<class Field> class SchurRedBlackBase {
+  template<class Field, class OpORLin = OperatorFunction<Field> > class SchurRedBlackBase {
   protected:
     typedef CheckerBoardedSparseMatrixBase<Field> Matrix;
-    OperatorFunction<Field> & _HermitianRBSolver;
+    OpORLin & _HermitianRBSolver;
     int CBfactorise;
     bool subGuess;
     bool useSolnAsInitGuess; // if true user-supplied solution vector is used as initial guess for solver
   public:
 
-    SchurRedBlackBase(OperatorFunction<Field> &HermitianRBSolver, const bool initSubGuess = false,
+    SchurRedBlackBase(OpORLin &HermitianRBSolver, const bool initSubGuess = false,
         const bool _solnAsInitGuess = false)  :
     _HermitianRBSolver(HermitianRBSolver),
     useSolnAsInitGuess(_solnAsInitGuess)
@@ -263,10 +263,10 @@ namespace Grid {
     /////////////////////////////////////////////////////////////
     // Override in derived. Not virtual as template methods
     /////////////////////////////////////////////////////////////
-    virtual void RedBlackSource  (Matrix & _Matrix,const Field &src, Field &src_e,Field &src_o)                =0;
-    virtual void RedBlackSolution(Matrix & _Matrix,const Field &sol_o, const Field &src_e,Field &sol)          =0;
-    virtual void RedBlackSolve   (Matrix & _Matrix,const Field &src_o, Field &sol_o)                           =0;
-    virtual void RedBlackSolve   (Matrix & _Matrix,const std::vector<Field> &src_o,  std::vector<Field> &sol_o)=0;
+    virtual void RedBlackSource  (Matrix & _Matrix,const Field &src, Field &src_e,Field &src_o);
+    virtual void RedBlackSolution(Matrix & _Matrix,const Field &sol_o, const Field &src_e,Field &sol);
+    virtual void RedBlackSolve   (Matrix & _Matrix,const Field &src_o, Field &sol_o);
+    virtual void RedBlackSolve   (Matrix & _Matrix,const std::vector<Field> &src_o,  std::vector<Field> &sol_o);
 
   };
 
@@ -410,16 +410,31 @@ namespace Grid {
   // ( 1 - Meo Moo^inv Moe Mee^inv  ) phi =( 1 - Meo Moo^inv Moe Mee^inv  ) Mee psi =  = eta  = eta
   //=> psi = MeeInv phi
   ///////////////////////////////////////////////////////////////////////////////////////////////////////
-  template<class Field> class SchurRedBlackDiagTwoSolve : public SchurRedBlackBase<Field> {
+  template<class Field, class OpORLin = OperatorFunction<Field> > class SchurRedBlackDiagTwoSolve : public SchurRedBlackBase<Field, OpORLin> {
   public:
     typedef CheckerBoardedSparseMatrixBase<Field> Matrix;
+
+  private:
+    virtual void RedBlackSolve(Matrix & _Matrix,const Field &src_o, Field &sol_o)
+    {
+      SchurDiagTwoOperator<Matrix,Field> _HermOpEO(_Matrix);
+      this->_HermitianRBSolver(_HermOpEO,src_o,sol_o);
+    }
+
+    virtual void RedBlackSolve(Matrix & _Matrix,const std::vector<Field> &src_o,  std::vector<Field> &sol_o)
+    {
+      SchurDiagTwoOperator<Matrix,Field> _HermOpEO(_Matrix);
+      this->_HermitianRBSolver(_HermOpEO,src_o,sol_o); 
+    }
+
+  public:
 
     /////////////////////////////////////////////////////
     // Wrap the usual normal equations Schur trick
     /////////////////////////////////////////////////////
-  SchurRedBlackDiagTwoSolve(OperatorFunction<Field> &HermitianRBSolver, const bool initSubGuess = false,
+    SchurRedBlackDiagTwoSolve(OpORLin &HermitianRBSolver, const bool initSubGuess = false,
       const bool _solnAsInitGuess = false)  
-    : SchurRedBlackBase<Field>(HermitianRBSolver,initSubGuess,_solnAsInitGuess) {};
+    : SchurRedBlackBase<Field, OpORLin>(HermitianRBSolver,initSubGuess,_solnAsInitGuess) {};
 
     virtual void RedBlackSource(Matrix & _Matrix,const Field &src, Field &src_e,Field &src_o)
     {
@@ -469,18 +484,170 @@ namespace Grid {
      
       setCheckerboard(sol,sol_e);    assert(  sol_e.checkerboard ==Even);
       setCheckerboard(sol,sol_o_i);  assert(  sol_o_i.checkerboard ==Odd );
+    }
+
+  };
+
+
+  template<class Field>
+  class SchurRedBlackDiagTwoMixed: public SchurRedBlackDiagTwoSolve<Field, class LinearFunction<Field>> {
+  public:
+
+    SchurRedBlackDiagTwoMixed(LinearFunction<Field> &HermitianRBSolver, const bool initSubGuess = false,
+      const bool _solnAsInitGuess = false)  
+      : SchurRedBlackDiagTwoSolve<Field, LinearFunction<Field>>(HermitianRBSolver,initSubGuess,_solnAsInitGuess) {};
+
+    typedef CheckerBoardedSparseMatrixBase<Field> Matrix;
+
+    virtual void RedBlackSolve(Matrix & _Matrix,const Field &src_o, Field &sol_o) override
+    {
+      this->_HermitianRBSolver(src_o,sol_o);
+    }
+
+    virtual void RedBlackSolve(Matrix & _Matrix,const std::vector<Field> &src_o, std::vector<Field> &sol_o) override
+    {
+      this->_HermitianRBSolver(src_o,sol_o);
+    }
+
+  };
+
+
+  //split cg hack, still needs fixing to conform to new standard
+
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Take a matrix and form a Red Black solver calling a Herm solver
+  // Use of RB info prevents making SchurRedBlackSolve conform to standard interface
+  ///////////////////////////////////////////////////////////////////////////////////////////////////////
+  template<class LinopPolicyD, class LinopPolicyF,typename std::enable_if<getPrecision<typename LinopPolicyD::FermionField>::value == 2 && getPrecision<typename LinopPolicyF::FermionField>::value == 1 , int>::type = 0> class SplitConjugateGradient;
+}
+namespace Grid{
+  template<class Field, class LinopPolicyD, class LinopPolicyF, typename GuessType> class SchurRedBlackDiagTwoSplit {
+  private:
+
+    //SplitConjugateGradient
+    Grid::SplitConjugateGradient<LinopPolicyD, LinopPolicyF> & _HermitianRBSolver;
+    typedef typename LinopPolicyD::FermionField FermionFieldD;
+    typedef typename LinopPolicyF::FermionField FermionFieldF;
+    //LinearFunction<Field> & _HermitianRBSolver;
+    int CBfactorise;
+    GuessType & _guesser; //assumes single prec. evecs
+  public:
+
+    /////////////////////////////////////////////////////
+    // Wrap the usual normal equations Schur trick
+    /////////////////////////////////////////////////////
+    SchurRedBlackDiagTwoSplit(SplitConjugateGradient<LinopPolicyD, LinopPolicyF> &HermitianRBSolver , 
+//LinearFunction<Field> &HermitianRBSolver,
+ GuessType &guesser):
+      _HermitianRBSolver(HermitianRBSolver),
+      _guesser(guesser)
+    { 
+      CBfactorise=0;
     };
 
-    virtual void RedBlackSolve   (Matrix & _Matrix,const Field &src_o, Field &sol_o)
-    {
+
+    //split cg version
+    template<class Matrix>
+    void operator() (Matrix & _Matrix,const std::vector<Field> &in, std::vector<Field> &out, bool do_defl=false, bool defl_sub=false){
+
+      // FIXME CGdiagonalMee not implemented virtual function
+      // FIXME use CBfactorise to control schur decomp
+      GridBase *grid = _Matrix.RedBlackGrid();
+      GridBase *fgrid= _Matrix.Grid();
+      const size_t nsolve = in.size();
+    //  assert(nsolve==1); //fix this
+
       SchurDiagTwoOperator<Matrix,Field> _HermOpEO(_Matrix);
-      this->_HermitianRBSolver(_HermOpEO,src_o,sol_o);
-    };
-    virtual void RedBlackSolve   (Matrix & _Matrix,const std::vector<Field> &src_o,  std::vector<Field> &sol_o)
-    {
-      SchurDiagTwoOperator<Matrix,Field> _HermOpEO(_Matrix);
-      this->_HermitianRBSolver(_HermOpEO,src_o,sol_o); 
-    }
+ 
+      std::vector<Field> src_e(nsolve, Field(grid));
+      std::vector<Field> src_o(nsolve, Field(grid));
+      std::vector<Field> defl(defl_sub? nsolve : 0, Field(grid));
+      Field sol_e(grid);
+      Field sol_o(grid);
+      std::vector<Field>   tmp(nsolve, Field(grid));
+      Field  Mtmp(grid);
+      Field resid(fgrid);
+      Field resid_rb(grid);
+
+      for(size_t s=0; s<nsolve; s++){
+	pickCheckerboard(Even,src_e[s],in[s]);
+	pickCheckerboard(Odd ,src_o[s],in[s]);
+	pickCheckerboard(Even,sol_e,out[s]);
+	pickCheckerboard(Odd ,sol_o,out[s]);
+    	tmp[s] = Zero();
+	if(defl_sub) {defl[s] = Zero(); pickCheckerboard(Odd, defl[s], in[s]);}
+
+      /////////////////////////////////////////////////////
+      // src_o = Mdag * (source_o - Moe MeeInv source_e)
+      /////////////////////////////////////////////////////
+      _Matrix.MooeeInv(src_e[s],tmp[s]);     assert(  tmp[s].checkerboard ==Even);
+      _Matrix.Meooe   (tmp[s],Mtmp);      assert( Mtmp.checkerboard ==Odd);
+      tmp[s]=src_o[s]-Mtmp;                  assert(  tmp[s].checkerboard ==Odd);     
+
+      // get the right MpcDag
+      _HermOpEO.MpcDag(tmp[s],src_o[s]);     assert(src_o[s].checkerboard ==Odd);
+      if(!do_defl) _Matrix.Mooee(sol_o, tmp[s]); //initial guess taken from output vector.
+      }
+      //////////////////////////////////////////////////////////////
+      // get the subtraction terms for A2A propagator
+      //////////////////////////////////////////////////////////////
+      if(do_defl && !defl_sub){
+	_guesser(src_o, tmp);
+      }else if(do_defl && defl_sub){
+	_guesser(src_o, tmp, defl);
+      }else if(!do_defl && defl_sub){
+	_guesser(src_o, defl);
+      }
+
+      //////////////////////////////////////////////////////////////
+      // Call the red-black solver
+      //////////////////////////////////////////////////////////////
+      std::cout<<GridLogMessage << "SchurRedBlack solver calling the MpcDagMp solver" <<std::endl;
+//      _HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
+//      _HermitianRBSolver(_HermOpEO,src_o,tmp);  assert(tmp.checkerboard==Odd);
+      //_HermitianRBSolver(src_o[0],tmp[0]);
+      _HermitianRBSolver(src_o,tmp);
+      for(size_t s=0; s<nsolve; s++){
+	assert(tmp[s].checkerboard==Odd);
+	//check residual
+	{
+	  _HermOpEO.HermOp(tmp[s], resid_rb);
+	  resid_rb = resid_rb-src_o[s];
+	  RealD ns = norm2(src_o[s]);
+	  RealD nr = norm2(resid_rb);
+	  std::cout<<GridLogMessage << "SchurRedBlackDiagTwoSplit solver true post-solve resid [" << s << "] = " << std::sqrt(nr/ns) <<" nr = "<< nr <<" ns = "<<ns << std::endl;
+	}
+
+	//Pull low-mode part out of solution
+	if(defl_sub){
+	  assert(defl[s].checkerboard==Odd);
+	  std::cout<<GridLogMessage << "SchurRedBlackDiagTwoSplit, subtracting low mode [" << s << "]." <<std::endl;
+	  axpy(tmp[s], -1.0, defl[s], tmp[s]);
+	}
+	_Matrix.MooeeInv(tmp[s],sol_o);        assert(  sol_o.checkerboard   ==Odd);
+
+      ///////////////////////////////////////////////////
+      // sol_e = M_ee^-1 * ( src_e - Meo sol_o )...
+      ///////////////////////////////////////////////////
+      _Matrix.Meooe(sol_o,tmp[s]);        assert(  tmp[s].checkerboard   ==Even);
+      src_e[s] = src_e[s]-tmp[s];               assert(  src_e[s].checkerboard ==Even);
+      _Matrix.MooeeInv(src_e[s],sol_e);   assert(  sol_e.checkerboard ==Even);
+     
+      setCheckerboard(out[s],sol_e); assert(  sol_e.checkerboard ==Even);
+      setCheckerboard(out[s],sol_o); assert(  sol_o.checkerboard ==Odd );
+
+      // Verify the unprec residual
+      _Matrix.M(out[s],resid); 
+      resid = resid-in[s];
+      RealD ns = norm2(in[s]);
+      RealD nr = norm2(resid);
+
+      std::cout<<GridLogMessage << "SchurRedBlackDiagTwoSplit solver true unprec resid [" << s << "] = " << std::sqrt(nr/ns) <<" nr = "<< nr <<" ns = "<<ns << std::endl;
+      }
+    }     
+
+
   };
+
 }
 #endif
