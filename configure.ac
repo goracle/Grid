@@ -413,9 +413,13 @@ case ${ac_COMMS} in
         AC_DEFINE([GRID_COMMS_NONE],[1],[GRID_COMMS_NONE] )
         comms_type='none'
      ;;
-     mpi*)
+     mpi3*)
         AC_DEFINE([GRID_COMMS_MPI3],[1],[GRID_COMMS_MPI3] )
         comms_type='mpi3'
+     ;;
+     mpi*)
+        AC_DEFINE([GRID_COMMS_MPI],[1],[GRID_COMMS_MPI] )
+        comms_type='mpi'
      ;;
      *)
         AC_MSG_ERROR([${ac_COMMS} unsupported --enable-comms option]);
