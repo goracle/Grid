@@ -8,6 +8,13 @@ if BUILD_COMMS_MPI3
   extra_sources+=communicator/SharedMemory.cc
 endif
 
+if BUILD_COMMS_MPI
+  extra_sources+=communicator/Communicator_mpi.cc
+  extra_sources+=communicator/Communicator_base.cc
+  extra_sources+=communicator/SharedMemory.cc
+  extra_sources+=communicator/SharedMemoryNone.cc
+endif
+
 if BUILD_COMMS_NONE
   extra_sources+=communicator/Communicator_none.cc
   extra_sources+=communicator/Communicator_base.cc
