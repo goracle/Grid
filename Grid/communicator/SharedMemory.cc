@@ -70,6 +70,10 @@ void *SharedMemory::ShmBufferMalloc(size_t bytes){
   void *ptr = (void *)heap_top;
   heap_top  += bytes;
   heap_bytes+= bytes;
+#ifdef GRID_COMMS_MPI
+  assert(heap_size == GlobalSharedMemory::MAX_MPI_SHM_BYTES);
+  assert(heap_size == 1024LL*1024LL*1024LL);
+#endif
   if (heap_bytes >= heap_size) {
     std::cout<< " ShmBufferMalloc exceeded shared heap size -- try increasing with --shm <MB> flag" <<std::endl;
     std::cout<< " Parameter specified in units of MB (megabytes) " <<std::endl;
@@ -86,6 +90,18 @@ void *SharedMemory::ShmBufferSelf(void)
 {
   return ShmCommBufs[ShmRank];
 }
+
+#if defined(GRID_COMMS_MPI) || defined(GRID_COMMS_MPI3)
+SharedMemory::~SharedMemory()
+{
+  int MPI_is_finalised;  MPI_Finalized(&MPI_is_finalised);
+#ifdef GRID_COMMS_MPI3
+  if ( !MPI_is_finalised ) { 
+    MPI_Comm_free(&ShmComm);
+  }
+#endif
+}
+#endif
 
 
 

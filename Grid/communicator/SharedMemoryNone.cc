@@ -122,7 +122,9 @@ void *SharedMemory::ShmBufferTranslate(int rank,void * local_p)
 {
   return NULL;
 }
+
+#if !defined(GRID_COMMS_MPI) && !defined(GRID_COMMS_MPI3)
 SharedMemory::~SharedMemory()
 {};
-
+#endif
 }

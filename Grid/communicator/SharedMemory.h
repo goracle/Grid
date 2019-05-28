@@ -41,7 +41,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 #include <Grid/GridCore.h>
 
-#if defined (GRID_COMMS_MPI3) 
+#if defined(GRID_COMMS_MPI) || defined(GRID_COMMS_MPI3)
 #include <mpi.h>
 #endif 
 #include <semaphore.h>
@@ -59,7 +59,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 namespace Grid {
 
-#if defined (GRID_COMMS_MPI3) 
+#if defined (GRID_COMMS_MPI3) || defined (GRID_COMMS_MPI)
   typedef MPI_Comm    Grid_MPI_Comm;
   typedef MPI_Request CommsRequest_t;
 #else 
@@ -79,6 +79,8 @@ class GlobalSharedMemory {
  public:
   static int      ShmSetup(void)      { return _ShmSetup; }
   static int      ShmAlloc(void)      { return _ShmAlloc; }
+  static int      ShmAlloc(int arg)      {_ShmAlloc=arg; return _ShmAlloc; }
+  static uint64_t ShmAllocBytes(uint64_t arg) {_ShmAllocBytes=arg; return _ShmAllocBytes; }
   static uint64_t ShmAllocBytes(void) { return _ShmAllocBytes; }
   static uint64_t      MAX_MPI_SHM_BYTES;
   static int           Hugepages;
@@ -96,6 +98,7 @@ class GlobalSharedMemory {
   static int           WorldNodes;
   static int           WorldNode;
 
+  std::vector<int>  ShmRanks;
   static std::vector<int>  WorldShmRanks;
 
   //////////////////////////////////////////////////////////////////////////////////////
@@ -157,8 +160,11 @@ class SharedMemory
   //////////////////////////////////////////////////////////////////////////
   // Make info on Nodes & ranks and Shared memory available
   //////////////////////////////////////////////////////////////////////////
+  
+#if defined( GRID_COMMS_MPI3)
   int NodeCount(void) { return GlobalSharedMemory::WorldNodes;};
   int RankCount(void) { return GlobalSharedMemory::WorldSize;};
+#endif
 
 };
 

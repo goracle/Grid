@@ -32,6 +32,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 ///////////////////////////////////
 // Processor layout information
 ///////////////////////////////////
+#include <Grid/communicator/SharedMemory.h>
 #ifdef GRID_COMMS_MPI
 #include <mpi.h>
 #endif
@@ -48,7 +49,7 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 namespace Grid {
 
-class CartesianCommunicator {
+  class CartesianCommunicator : public SharedMemory {
   public:    
 
 
@@ -100,7 +101,7 @@ class CartesianCommunicator {
   ////////////////////////////////////////////////////////////////////
 #ifdef GRID_COMMS_MPI3
 
-  static int ShmRank;
+    //static int ShmRank;
   static int ShmSize;
   static int GroupRank;
   static int GroupSize;
@@ -119,7 +120,7 @@ class CartesianCommunicator {
   static std::vector<int> MyGroup;
   static int ShmSetup;
   static MPI_Win ShmWindow; 
-  static MPI_Comm ShmComm;
+    //static MPI_Comm ShmComm;
   
   std::vector<int>  LexicographicToWorldRank;
   
@@ -143,8 +144,8 @@ class CartesianCommunicator {
   static void *ShmBufferSelf(void);
   void *ShmBuffer(int rank);
   void *ShmBufferTranslate(int rank,void * local_p);
-  void *ShmBufferMalloc(size_t bytes);
-  void ShmBufferFreeAll(void) ;
+    //void *ShmBufferMalloc(size_t bytes);
+    //void ShmBufferFreeAll(void) ;
   
   ////////////////////////////////////////////////
   // Must call in Grid startup
@@ -191,8 +192,11 @@ class CartesianCommunicator {
   const std::vector<int> & ThisProcessorCoor(void) ;
   const std::vector<int> & ProcessorGrid(void)     ;
   int                      ProcessorCount(void)    ;
-  int                      NodeCount(void)    ;
-  int                      RankCount(void)    ;
+
+#if !defined(GRID_COMMS_MPI3)
+    int                      NodeCount(void)    ;
+    int                      RankCount(void)    ;
+#endif
 
   ////////////////////////////////////////////////////////////////////////////////
   // very VERY rarely (Log, serial RNG) we need world without a grid
