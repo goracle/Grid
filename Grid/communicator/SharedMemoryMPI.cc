@@ -132,7 +132,22 @@ int Log2Size(int TwoToPower,int MAXLOG2)
 }
 void GlobalSharedMemory::OptimalCommunicator(const std::vector<int> &processors,Grid_MPI_Comm & optimal_comm)
 {
-#ifdef HYPERCUBE
+  //////////////////////////////////////////////////////////////////////////////
+  // Look and see if it looks like an HPE 8600 based on hostname conventions
+  //////////////////////////////////////////////////////////////////////////////
+  const int namelen = _POSIX_HOST_NAME_MAX;
+  char name[namelen];
+  int R;
+  int I;
+  int N;
+  gethostname(name,namelen);
+  int nscan = sscanf(name,"r%di%dn%d",&R,&I,&N) ;
+
+  if(nscan==3) OptimalCommunicatorHypercube(processors,optimal_comm);
+  else         OptimalCommunicatorSharedMemory(processors,optimal_comm);
+}
+void GlobalSharedMemory::OptimalCommunicatorHypercube(const std::vector<int> &processors,Grid_MPI_Comm & optimal_comm)
+{
   ////////////////////////////////////////////////////////////////
   // Assert power of two shm_size.
   ////////////////////////////////////////////////////////////////
@@ -253,7 +268,9 @@ void GlobalSharedMemory::OptimalCommunicator(const std::vector<int> &processors,
   /////////////////////////////////////////////////////////////////
   int ierr= MPI_Comm_split(WorldComm,0,rank,&optimal_comm);
   assert(ierr==0);
-#else 
+}
+void GlobalSharedMemory::OptimalCommunicatorSharedMemory(const std::vector<int> &processors,Grid_MPI_Comm & optimal_comm)
+{
   ////////////////////////////////////////////////////////////////
   // Assert power of two shm_size.
   ////////////////////////////////////////////////////////////////
@@ -306,7 +323,6 @@ void GlobalSharedMemory::OptimalCommunicator(const std::vector<int> &processors,
   /////////////////////////////////////////////////////////////////
   int ierr= MPI_Comm_split(WorldComm,0,rank,&optimal_comm);
   assert(ierr==0);
-#endif //HYPERCUBE
 }
 ////////////////////////////////////////////////////////////////////////////////////////////
 // SHMGET
@@ -332,12 +348,12 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
       int flags = IPC_CREAT | SHM_R | SHM_W;
 #ifdef SHM_HUGETLB
       if (Hugepages) flags|=SHM_HUGETLB;
-#endif //SHM_HUGETLB
+#endif
       if ((shmids[r]= shmget(key,size, flags)) ==-1) {
         int errsv = errno;
         printf("Errno %d\n",errsv);
         printf("key   %d\n",key);
-        printf("size  %lld\n",size);
+        printf("size  %ld\n",size);
         printf("flags %d\n",flags);
         perror("shmget");
         exit(1);
@@ -368,7 +384,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   _ShmAlloc=1;
   _ShmAllocBytes  = bytes;
 }
-#endif //GRID_MPI3_SHMGET
+#endif
  
 ////////////////////////////////////////////////////////////////////////////////////////////
 // Hugetlbfs mapping intended
@@ -399,12 +415,12 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
       exit(0);
     }
     int mmap_flag = MAP_SHARED ;
-#ifdef MAP_POPULATE
+#ifdef MAP_POPULATE    
     mmap_flag|=MAP_POPULATE;
-#endif //MAP_POPULATE
+#endif
 #ifdef MAP_HUGETLB
     if ( flags ) mmap_flag |= MAP_HUGETLB;
-#endif //MAP_HUGETLB
+#endif
     void *ptr = (void *) mmap(NULL, bytes, PROT_READ | PROT_WRITE, mmap_flag,fd, 0); 
     if ( ptr == (void *)MAP_FAILED ) {    
       printf("mmap %s failed\n",shm_name);
@@ -418,7 +434,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   _ShmAlloc=1;
   _ShmAllocBytes  = bytes;
 };
-#endif // MMAP, GRID_MPI3_SHMMMAP
+#endif // MMAP
 
 #ifdef GRID_MPI3_SHM_NONE
 void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
@@ -441,12 +457,12 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
     
     int fd=-1;
     int mmap_flag = MAP_SHARED |MAP_ANONYMOUS ;
-#ifdef MAP_POPULATE
+#ifdef MAP_POPULATE    
     mmap_flag|=MAP_POPULATE;
-#endif //MAP_POPULATE
+#endif
 #ifdef MAP_HUGETLB
     if ( flags ) mmap_flag |= MAP_HUGETLB;
-#endif //MAP_HUGETLB
+#endif
     void *ptr = (void *) mmap(NULL, bytes, PROT_READ | PROT_WRITE, mmap_flag,fd, 0); 
     if ( ptr == (void *)MAP_FAILED ) {    
       printf("mmap %s failed\n",shm_name);
@@ -460,7 +476,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   _ShmAlloc=1;
   _ShmAllocBytes  = bytes;
 };
-#endif // MMAP, GRID_MPI3_SHM_NONE
+#endif // MMAP
 
 #ifdef GRID_MPI3_SHMOPEN
 ////////////////////////////////////////////////////////////////////////////////////////////
@@ -491,12 +507,12 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
       ftruncate(fd, size);
 	
       int mmap_flag = MAP_SHARED;
-#ifdef MAP_POPULATE
+#ifdef MAP_POPULATE 
       mmap_flag |= MAP_POPULATE;
-#endif //MAP_POPULATE
+#endif
 #ifdef MAP_HUGETLB
       if (flags) mmap_flag |= MAP_HUGETLB;
-#endif //MAP_HUGETLB
+#endif
       void * ptr =  mmap(NULL,size, PROT_READ | PROT_WRITE, mmap_flag, fd, 0);
       
       //      std::cout << "Set WorldShmCommBufs["<<r<<"]="<<ptr<< "("<< size<< "bytes)"<<std::endl;
@@ -535,7 +551,7 @@ void GlobalSharedMemory::SharedMemoryAllocate(uint64_t bytes, int flags)
   _ShmAlloc=1;
   _ShmAllocBytes = bytes;
 }
-#endif //GRID_MPI3_SHMOPEN
+#endif
 
 
 
@@ -640,4 +656,12 @@ void *SharedMemory::ShmBufferTranslate(int rank,void * local_p)
     return (void *) remote;
   }
 }
+SharedMemory::~SharedMemory()
+{
+  int MPI_is_finalised;  MPI_Finalized(&MPI_is_finalised);
+  if ( !MPI_is_finalised ) { 
+    MPI_Comm_free(&ShmComm);
+  }
+};
+
 }
