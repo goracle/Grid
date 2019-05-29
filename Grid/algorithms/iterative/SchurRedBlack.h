@@ -263,10 +263,10 @@ namespace Grid {
     /////////////////////////////////////////////////////////////
     // Override in derived. 
     /////////////////////////////////////////////////////////////
-    virtual void RedBlackSource  (Matrix & _Matrix,const Field &src, Field &src_e,Field &src_o);
-    virtual void RedBlackSolution(Matrix & _Matrix,const Field &sol_o, const Field &src_e,Field &sol);
-    virtual void RedBlackSolve   (Matrix & _Matrix,const Field &src_o, Field &sol_o);
-    virtual void RedBlackSolve   (Matrix & _Matrix,const std::vector<Field> &src_o,  std::vector<Field> &sol_o);
+    virtual void RedBlackSource  (Matrix & _Matrix,const Field &src, Field &src_e,Field &src_o) = 0;
+    virtual void RedBlackSolution(Matrix & _Matrix,const Field &sol_o, const Field &src_e,Field &sol) = 0;
+    virtual void RedBlackSolve   (Matrix & _Matrix,const Field &src_o, Field &sol_o) = 0;
+    virtual void RedBlackSolve   (Matrix & _Matrix,const std::vector<Field> &src_o,  std::vector<Field> &sol_o) = 0;
 
   };
 
