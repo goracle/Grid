@@ -29,7 +29,7 @@ See the full license in the file "LICENSE" in the top level distribution directo
 #include <Hadrons/Module.hpp>
 
 using namespace Grid;
-using namespace QCD;
+ 
 using namespace Hadrons;
 
 /******************************************************************************
@@ -87,6 +87,21 @@ GridParallelRNG & ModuleBase::rng4d(void)
     {
         seed_ = makeSeedString();
         LOG(Message) << "Seeding 4D RNG " << &r << " with string '" 
+                     << seed_ << "'" << std::endl;
+        r.SeedUniqueString(seed_);
+    }
+
+    return r;
+}
+
+GridSerialRNG & ModuleBase::rngSerial(void)
+{
+    auto &r = *env().getSerialRng();
+
+    if (makeSeedString() != seed_)
+    {
+        seed_ = makeSeedString();
+        LOG(Message) << "Seeding Serial RNG " << &r << " with string '" 
                      << seed_ << "'" << std::endl;
         r.SeedUniqueString(seed_);
     }

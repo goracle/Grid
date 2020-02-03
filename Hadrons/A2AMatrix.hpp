@@ -108,7 +108,7 @@ public:
     void saveBlock(const A2AMatrixSet<T> &m, const unsigned int ext, const unsigned int str,
                    const unsigned int i, const unsigned int j);
     template <template <class> class Vec, typename VecT>
-    void load(Vec<VecT> &v, double *tRead = nullptr);
+    void load(Vec<VecT> &v, double *tRead = nullptr, GridBase *grid = nullptr);
 private:
     std::string  filename_{""}, dataname_{""};
     unsigned int nt_{0}, ni_{0}, nj_{0};
@@ -167,10 +167,12 @@ public:
     template <typename C, typename MatLeft, typename MatRight>
     static inline void accTrMul(C &acc, const MatLeft &a, const MatRight &b)
     {
-        if ((MatLeft::Options == Eigen::RowMajor) and
-            (MatRight::Options == Eigen::ColMajor))
+        const int RowMajor = Eigen::RowMajor;
+        const int ColMajor = Eigen::ColMajor;
+        if ((MatLeft::Options  == RowMajor) and
+            (MatRight::Options == ColMajor))
         {
-            parallel_for (unsigned int r = 0; r < a.rows(); ++r)
+  	  thread_for(r,a.rows(),
             {
                 C tmp;
 #ifdef USE_MKL
@@ -178,15 +180,15 @@ public:
 #else
                 tmp = a.row(r).conjugate().dot(b.col(r));
 #endif
-                parallel_critical
+                thread_critical
                 {
                     acc += tmp;
                 }
-            }
+            });
         }
         else
-        {
-            parallel_for (unsigned int c = 0; c < a.cols(); ++c)
+	  {
+            thread_for(c,a.cols(),
             {
                 C tmp;
 #ifdef USE_MKL 
@@ -194,11 +196,11 @@ public:
 #else
                 tmp = a.col(c).conjugate().dot(b.row(c));
 #endif
-                parallel_critical
+                thread_critical
                 {
                     acc += tmp;
                 }
-            }
+            });
         }
     }
 
@@ -218,18 +220,20 @@ public:
                            const Mat<ComplexD, Opts...> &b)
     {
         static const ComplexD one(1., 0.), zero(0., 0.);
+        const int RowMajor = Eigen::RowMajor;
+        const int ColMajor = Eigen::ColMajor;
 
         if ((res.rows() != a.rows()) or (res.cols() != b.cols()))
         {
             res.resize(a.rows(), b.cols());
         }
-        if (Mat<ComplexD, Opts...>::Options == Eigen::RowMajor)
+        if (Mat<ComplexD, Opts...>::Options == RowMajor)
         {
             cblas_zgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, a.rows(), b.cols(),
                         a.cols(), &one, a.data(), a.cols(), b.data(), b.cols(), &zero,
                         res.data(), res.cols());
         }
-        else if (Mat<ComplexD, Opts...>::Options == Eigen::ColMajor)
+        else if (Mat<ComplexD, Opts...>::Options == ColMajor)
         {
             cblas_zgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, a.rows(), b.cols(),
                         a.cols(), &one, a.data(), a.rows(), b.data(), b.rows(), &zero,
@@ -243,18 +247,20 @@ public:
                            const Mat<ComplexF, Opts...> &b)
     {
         static const ComplexF one(1., 0.), zero(0., 0.);
+        const int RowMajor = Eigen::RowMajor;
+        const int ColMajor = Eigen::ColMajor;
 
         if ((res.rows() != a.rows()) or (res.cols() != b.cols()))
         {
             res.resize(a.rows(), b.cols());
         }
-        if (Mat<ComplexF, Opts...>::Options == Eigen::RowMajor)
+        if (Mat<ComplexF, Opts...>::Options == RowMajor)
         {
             cblas_cgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, a.rows(), b.cols(),
                         a.cols(), &one, a.data(), a.cols(), b.data(), b.cols(), &zero,
                         res.data(), res.cols());
         }
-        else if (Mat<ComplexF, Opts...>::Options == Eigen::ColMajor)
+        else if (Mat<ComplexF, Opts...>::Options == ColMajor)
         {
             cblas_cgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, a.rows(), b.cols(),
                         a.cols(), &one, a.data(), a.rows(), b.data(), b.rows(), &zero,
@@ -281,22 +287,25 @@ private:
                                     unsigned int &bInc, const unsigned int aRow, 
                                     const MatLeft &a, const MatRight &b)
     {
-        if (MatLeft::Options == Eigen::RowMajor)
+        const int RowMajor = Eigen::RowMajor;
+        const int ColMajor = Eigen::ColMajor;
+
+        if (MatLeft::Options == RowMajor)
         {
             aPt  = a.data() + aRow*a.cols();
             aInc = 1;
         }
-        else if (MatLeft::Options == Eigen::ColMajor)
+        else if (MatLeft::Options == ColMajor)
         {
             aPt  = a.data() + aRow;
             aInc = a.rows();
         }
-        if (MatRight::Options == Eigen::RowMajor)
+        if (MatRight::Options == RowMajor)
         {
             bPt  = b.data() + aRow;
             bInc = b.cols();
         }
-        else if (MatRight::Options == Eigen::ColMajor)
+        else if (MatRight::Options == ColMajor)
         {
             bPt  = b.data() + aRow*b.rows();
             bInc = 1;
@@ -309,22 +318,24 @@ private:
                                     unsigned int &bInc, const unsigned int aCol, 
                                     const MatLeft &a, const MatRight &b)
     {
-        if (MatLeft::Options == Eigen::RowMajor)
+        const int RowMajor = Eigen::RowMajor;
+        const int ColMajor = Eigen::ColMajor;
+        if (MatLeft::Options == RowMajor)
         {
             aPt  = a.data() + aCol;
             aInc = a.cols();
         }
-        else if (MatLeft::Options == Eigen::ColMajor)
+        else if (MatLeft::Options == ColMajor)
         {
             aPt  = a.data() + aCol*a.rows();
             aInc = 1;
         }
-        if (MatRight::Options == Eigen::RowMajor)
+        if (MatRight::Options == RowMajor)
         {
             bPt  = b.data() + aCol*b.cols();
             bInc = 1;
         }
-        else if (MatRight::Options == Eigen::ColMajor)
+        else if (MatRight::Options == ColMajor)
         {
             bPt  = b.data() + aCol;
             bInc = b.rows();
@@ -466,7 +477,7 @@ void A2AMatrixIo<T>::saveBlock(const T *data,
                          block  = {1, 1, 1}; 
     H5NS::DataSpace      memspace(count.size(), count.data()), dataspace;
     H5NS::DataSet        dataset;
-    size_t               shift;
+    //    size_t               shift;
 
     push(reader, dataname_);
     auto &group = reader.getGroup();
@@ -495,44 +506,53 @@ void A2AMatrixIo<T>::saveBlock(const A2AMatrixSet<T> &m,
 
 template <typename T>
 template <template <class> class Vec, typename VecT>
-void A2AMatrixIo<T>::load(Vec<VecT> &v, double *tRead)
+void A2AMatrixIo<T>::load(Vec<VecT> &v, double *tRead, GridBase *grid)
 {
 #ifdef HAVE_HDF5
-    Hdf5Reader           reader(filename_);
     std::vector<hsize_t> hdim;
     H5NS::DataSet        dataset;
     H5NS::DataSpace      dataspace;
     H5NS::CompType       datatype;
-    
-    push(reader, dataname_);
-    auto &group = reader.getGroup();
-    dataset     = group.openDataSet(HADRONS_A2AM_NAME);
-    datatype    = dataset.getCompType();
-    dataspace   = dataset.getSpace();
-    hdim.resize(dataspace.getSimpleExtentNdims());
-    dataspace.getSimpleExtentDims(hdim.data());
-    if ((nt_*ni_*nj_ != 0) and
-        ((hdim[0] != nt_) or (hdim[1] != ni_) or (hdim[2] != nj_)))
+
+    if (!(grid) || grid->IsBoss())
     {
-        HADRONS_ERROR(Size, "all-to-all matrix size mismatch (got "
-            + std::to_string(hdim[0]) + "x" + std::to_string(hdim[1]) + "x"
-            + std::to_string(hdim[2]) + ", expected "
-            + std::to_string(nt_) + "x" + std::to_string(ni_) + "x"
-            + std::to_string(nj_));
-    }
-    else if (ni_*nj_ == 0)
-    {
-        if (hdim[0] != nt_)
+        Hdf5Reader reader(filename_);
+        push(reader, dataname_);
+        auto &group = reader.getGroup();
+        dataset = group.openDataSet(HADRONS_A2AM_NAME);
+        datatype = dataset.getCompType();
+        dataspace = dataset.getSpace();
+        hdim.resize(dataspace.getSimpleExtentNdims());
+        dataspace.getSimpleExtentDims(hdim.data());
+        if ((nt_ * ni_ * nj_ != 0) and
+            ((hdim[0] != nt_) or (hdim[1] != ni_) or (hdim[2] != nj_)))
         {
-            HADRONS_ERROR(Size, "all-to-all time size mismatch (got "
-                + std::to_string(hdim[0]) + ", expected "
-                + std::to_string(nt_) + ")");
+            HADRONS_ERROR(Size, "all-to-all matrix size mismatch (got "
+                + std::to_string(hdim[0]) + "x" + std::to_string(hdim[1]) + "x"
+                + std::to_string(hdim[2]) + ", expected "
+                + std::to_string(nt_) + "x" + std::to_string(ni_) + "x"
+                + std::to_string(nj_));
         }
-        ni_ = hdim[1];
-        nj_ = hdim[2];
+        else if (ni_*nj_ == 0)
+        {
+            if (hdim[0] != nt_)
+            {
+                HADRONS_ERROR(Size, "all-to-all time size mismatch (got "
+                    + std::to_string(hdim[0]) + ", expected "
+                    + std::to_string(nt_) + ")");
+            }
+            ni_ = hdim[1];
+            nj_ = hdim[2];
+        }
+    }
+    if (grid)
+    {
+        grid->Broadcast(grid->BossRank(), &ni_, sizeof(unsigned int));
+        grid->Broadcast(grid->BossRank(), &nj_, sizeof(unsigned int));
     }
 
     A2AMatrix<T>         buf(ni_, nj_);
+    int broadcastSize =  sizeof(T) * buf.size();
     std::vector<hsize_t> count    = {1, static_cast<hsize_t>(ni_),
                                      static_cast<hsize_t>(nj_)},
                          stride   = {1, 1, 1},
@@ -554,10 +574,20 @@ void A2AMatrixIo<T>::load(Vec<VecT> &v, double *tRead)
             std::cout << " " << t;
             std::cout.flush();
         }
-        dataspace.selectHyperslab(H5S_SELECT_SET, count.data(), offset.data(),
-                                  stride.data(), block.data());
-        if (tRead) *tRead -= usecond();    
-        dataset.read(buf.data(), datatype, memspace, dataspace);
+        if (!(grid) || grid->IsBoss())
+        {
+            dataspace.selectHyperslab(H5S_SELECT_SET, count.data(), offset.data(),
+                                      stride.data(), block.data());
+        }
+        if (tRead) *tRead -= usecond();
+        if (!(grid) || grid->IsBoss())
+        {
+            dataset.read(buf.data(), datatype, memspace, dataspace);
+        }
+        if (grid)
+        {
+            grid->Broadcast(grid->BossRank(), buf.data(), broadcastSize);
+        }
         if (tRead) *tRead += usecond();
         v[t] = buf.template cast<VecT>();
     }
@@ -646,14 +676,15 @@ void A2AMatrixBlockComputation<T, Field, MetadataType, TIo>
             bytes    += kernel.bytes(N_iii, N_jjj);
 
             START_TIMER("cache copy");
-            parallel_for_nest5(int e =0;e<next_;e++)
-            for(int s =0;s< nstr_;s++)
-            for(int t =0;t< nt_;t++)
-            for(int iii=0;iii< N_iii;iii++)
-            for(int jjj=0;jjj< N_jjj;jjj++)
-            {
+            thread_for_collapse( 5,e,next_,{
+              for(int s =0;s< nstr_;s++)
+              for(int t =0;t< nt_;t++)
+              for(int iii=0;iii< N_iii;iii++)
+              for(int jjj=0;jjj< N_jjj;jjj++)
+              {
                 mBlock(e,s,t,ii+iii,jj+jjj) = mCacheBlock(e,s,t,iii,jjj);
-            }
+              }
+            });
             STOP_TIMER("cache copy");
         }
 

@@ -119,13 +119,13 @@ Install [MacPorts][MacPorts] if you haven't done so already, and then install pa
 
 These are the `portname`s for mandatory Grid libraries:
 
-* git
+* git-flow-avh
 * gmp
 * mpfr
 
 and these are the `portname`s for optional Grid libraries:
 
-* fftw-3
+* fftw-3-single
 * hdf5
 * lapack
 * doxygen
@@ -262,7 +262,6 @@ Set HEADER_SEARCH_PATHS to:
 
     $Grid/build$(CONFIGURATION)/Grid
     $Grid
-    $Grid/Grid
 
 followed by (***the order is important***) the locations reported by `grid-config --cxxflags`, ignoring duplicates, e.g.:
 
@@ -272,7 +271,7 @@ followed by (***the order is important***) the locations reported by `grid-confi
 
 **Note: the easiest way to set this value is to put it all on one line, space separated, and edit the text to the right of `HEADER_SEARCH_PATHS`**, i.e.:
 
-    $Grid/build$(CONFIGURATION)/Grid $Grid $Grid/Grid $GridPre/openmpi/include $GridPkg/include $GridPre/lime/include
+    $Grid/build$(CONFIGURATION)/Grid $Grid $GridPre/openmpi/include $GridPkg/include $GridPre/lime/include
 
 #### LIBRARY_SEARCH_PATHS
 
@@ -298,7 +297,7 @@ The easiest way to link to all required libraries is to obtain a list of all lib
 
 and pasting the output ***with `-lGrid -lHadrons ` prepended*** (including the `-l` switches) directly into `OTHER_LDFLAGS`, e.g.:
 
-    -lGrid -lHadrons -lmpi -lhdf5_cpp -lz -lcrypto -llime -lfftw3f -lfftw3 -lmpfr -lgmp -lstdc++ -lm -lz -lhdf5
+    -lGrid -lHadrons -lmpi -lhdf5_cpp -lhdf5 -lz -lcrypto -llime -lfftw3f -lfftw3 -lmpfr -lgmp -lm
 
 ## Make additional configurations
 
@@ -370,7 +369,7 @@ Instead:
 
 3. From a terminal session, locate and run your executable using `mpirun` (*the mangled name of the project build products will not be exactly the same as this example*):
 
-    `$GridPre/openmpi-3.1.3/bin/mpirun -np 2 ~/Library/Developer/Xcode/DerivedData/HelloGrid-fiyyuveptaqelbbvllomcgjyvghr/Build/Products/Debug/HelloGrid --grid 4.4.4.8 --mpi 1.1.1.2`
+    `$GridPre/openmpi/bin/mpirun -np 2 ~/Library/Developer/Xcode/DerivedData/HelloGrid-fiyyuveptaqelbbvllomcgjyvghr/Build/Products/Debug/HelloGrid --grid 4.4.4.8 --mpi 1.1.1.2`
 
     The Xcode debugger will attach to the first process.
 

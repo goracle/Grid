@@ -263,10 +263,10 @@ namespace Grid {
     /////////////////////////////////////////////////////////////
     // Override in derived. 
     /////////////////////////////////////////////////////////////
-    virtual void RedBlackSource  (Matrix & _Matrix,const Field &src, Field &src_e,Field &src_o) = 0;
-    virtual void RedBlackSolution(Matrix & _Matrix,const Field &sol_o, const Field &src_e,Field &sol) = 0;
-    virtual void RedBlackSolve   (Matrix & _Matrix,const Field &src_o, Field &sol_o) = 0;
-    virtual void RedBlackSolve   (Matrix & _Matrix,const std::vector<Field> &src_o,  std::vector<Field> &sol_o) = 0;
+    virtual void RedBlackSource  (Matrix & _Matrix,const Field &src, Field &src_e,Field &src_o)                =0;
+    virtual void RedBlackSolution(Matrix & _Matrix,const Field &sol_o, const Field &src_e,Field &sol)          =0;
+    virtual void RedBlackSolve   (Matrix & _Matrix,const Field &src_o, Field &sol_o)                           =0;
+    virtual void RedBlackSolve   (Matrix & _Matrix,const std::vector<Field> &src_o,  std::vector<Field> &sol_o)=0;
 
   };
 
@@ -297,9 +297,9 @@ namespace Grid {
       /////////////////////////////////////////////////////
       // src_o = (source_o - Moe MeeInv source_e)
       /////////////////////////////////////////////////////
-      _Matrix.MooeeInv(src_e,tmp);     assert(  tmp.checkerboard ==Even);
-      _Matrix.Meooe   (tmp,Mtmp);      assert( Mtmp.checkerboard ==Odd);     
-      tmp=src_o-Mtmp;                  assert(  tmp.checkerboard ==Odd);     
+      _Matrix.MooeeInv(src_e,tmp);     assert(  tmp.Checkerboard() ==Even);
+      _Matrix.Meooe   (tmp,Mtmp);      assert( Mtmp.Checkerboard() ==Odd);     
+      tmp=src_o-Mtmp;                  assert(  tmp.Checkerboard() ==Odd);     
 
       _Matrix.Mooee(tmp,src_o); // Extra factor of "m" in source from dumb choice of matrix norm.
     }
@@ -317,17 +317,17 @@ namespace Grid {
       ///////////////////////////////////////////////////
       // sol_e = M_ee^-1 * ( src_e - Meo sol_o )...
       ///////////////////////////////////////////////////
-      _Matrix.Meooe(sol_o,tmp);        assert(  tmp.checkerboard   ==Even);
-      src_e = src_e-tmp;               assert(  src_e.checkerboard ==Even);
-      _Matrix.MooeeInv(src_e,sol_e);   assert(  sol_e.checkerboard ==Even);
+      _Matrix.Meooe(sol_o,tmp);        assert(  tmp.Checkerboard()   ==Even);
+      src_e = src_e-tmp;               assert(  src_e.Checkerboard() ==Even);
+      _Matrix.MooeeInv(src_e,sol_e);   assert(  sol_e.Checkerboard() ==Even);
      
-      setCheckerboard(sol,sol_e); assert(  sol_e.checkerboard ==Even);
-      setCheckerboard(sol,sol_o); assert(  sol_o.checkerboard ==Odd );
+      setCheckerboard(sol,sol_e); assert(  sol_e.Checkerboard() ==Even);
+      setCheckerboard(sol,sol_o); assert(  sol_o.Checkerboard() ==Odd );
     }
     virtual void RedBlackSolve   (Matrix & _Matrix,const Field &src_o, Field &sol_o)
     {
       SchurStaggeredOperator<Matrix,Field> _HermOpEO(_Matrix);
-      this->_HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
+      this->_HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.Checkerboard()==Odd);
     };
     virtual void RedBlackSolve   (Matrix & _Matrix,const std::vector<Field> &src_o,  std::vector<Field> &sol_o)
     {
@@ -386,17 +386,17 @@ namespace Grid {
       ///////////////////////////////////////////////////
       // sol_e = M_ee^-1 * ( src_e - Meo sol_o )...
       ///////////////////////////////////////////////////
-      _Matrix.Meooe(sol_o,tmp);          assert(  tmp.checkerboard   ==Even);
-      src_e_i = src_e-tmp;               assert(  src_e_i.checkerboard ==Even);
-      _Matrix.MooeeInv(src_e_i,sol_e);   assert(  sol_e.checkerboard ==Even);
+      _Matrix.Meooe(sol_o,tmp);          assert(  tmp.Checkerboard()   ==Even);
+      src_e_i = src_e-tmp;               assert(  src_e_i.Checkerboard() ==Even);
+      _Matrix.MooeeInv(src_e_i,sol_e);   assert(  sol_e.Checkerboard() ==Even);
      
-      setCheckerboard(sol,sol_e); assert(  sol_e.checkerboard ==Even);
-      setCheckerboard(sol,sol_o); assert(  sol_o.checkerboard ==Odd );
+      setCheckerboard(sol,sol_e); assert(  sol_e.Checkerboard() ==Even);
+      setCheckerboard(sol,sol_o); assert(  sol_o.Checkerboard() ==Odd );
     }
     virtual void RedBlackSolve   (Matrix & _Matrix,const Field &src_o, Field &sol_o)
     {
       SchurDiagMooeeOperator<Matrix,Field> _HermOpEO(_Matrix);
-      this->_HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.checkerboard==Odd);
+      this->_HermitianRBSolver(_HermOpEO,src_o,sol_o);  assert(sol_o.Checkerboard()==Odd);
     };
     virtual void RedBlackSolve   (Matrix & _Matrix,const std::vector<Field> &src_o,  std::vector<Field> &sol_o)
     {
@@ -452,12 +452,12 @@ namespace Grid {
       /////////////////////////////////////////////////////
       // src_o = Mdag * (source_o - Moe MeeInv source_e)
       /////////////////////////////////////////////////////
-      _Matrix.MooeeInv(src_e,tmp);     assert(  tmp.checkerboard ==Even);
-      _Matrix.Meooe   (tmp,Mtmp);      assert( Mtmp.checkerboard ==Odd);     
-      tmp=src_o-Mtmp;                  assert(  tmp.checkerboard ==Odd);     
+      _Matrix.MooeeInv(src_e,tmp);     assert(  tmp.Checkerboard() ==Even);
+      _Matrix.Meooe   (tmp,Mtmp);      assert( Mtmp.Checkerboard() ==Odd);     
+      tmp=src_o-Mtmp;                  assert(  tmp.Checkerboard() ==Odd);     
 
       // get the right MpcDag
-      _HermOpEO.MpcDag(tmp,src_o);     assert(src_o.checkerboard ==Odd);       
+      _HermOpEO.MpcDag(tmp,src_o);     assert(src_o.Checkerboard() ==Odd);       
     }
 
     virtual void RedBlackSolution(Matrix & _Matrix,const Field &sol_o, const Field &src_e,Field &sol)
@@ -478,37 +478,24 @@ namespace Grid {
       ///////////////////////////////////////////////////
       // sol_e = M_ee^-1 * ( src_e - Meo sol_o )...
       ///////////////////////////////////////////////////
-      _Matrix.Meooe(sol_o_i,tmp);    assert(  tmp.checkerboard   ==Even);
-      tmp = src_e-tmp;               assert(  src_e.checkerboard ==Even);
-      _Matrix.MooeeInv(tmp,sol_e);   assert(  sol_e.checkerboard ==Even);
+      _Matrix.Meooe(sol_o_i,tmp);    assert(  tmp.Checkerboard()   ==Even);
+      tmp = src_e-tmp;               assert(  src_e.Checkerboard() ==Even);
+      _Matrix.MooeeInv(tmp,sol_e);   assert(  sol_e.Checkerboard() ==Even);
      
-      setCheckerboard(sol,sol_e);    assert(  sol_e.checkerboard ==Even);
-      setCheckerboard(sol,sol_o_i);  assert(  sol_o_i.checkerboard ==Odd );
-    }
+      setCheckerboard(sol,sol_e);    assert(  sol_e.Checkerboard() ==Even);
+      setCheckerboard(sol,sol_o_i);  assert(  sol_o_i.Checkerboard() ==Odd );
+    };
 
-  };
-
-
-  template<class Field>
-  class SchurRedBlackDiagTwoMixed: public SchurRedBlackDiagTwoSolve<Field, class LinearFunction<Field>> {
-  public:
-
-    SchurRedBlackDiagTwoMixed(LinearFunction<Field> &HermitianRBSolver, const bool initSubGuess = false,
-      const bool _solnAsInitGuess = false)  
-      : SchurRedBlackDiagTwoSolve<Field, LinearFunction<Field>>(HermitianRBSolver,initSubGuess,_solnAsInitGuess) {};
-
-    typedef CheckerBoardedSparseMatrixBase<Field> Matrix;
-
-    virtual void RedBlackSolve(Matrix & _Matrix,const Field &src_o, Field &sol_o) override
+    virtual void RedBlackSolve   (Matrix & _Matrix,const Field &src_o, Field &sol_o)
     {
-      this->_HermitianRBSolver(src_o,sol_o);
-    }
-
-    virtual void RedBlackSolve(Matrix & _Matrix,const std::vector<Field> &src_o, std::vector<Field> &sol_o) override
+      SchurDiagTwoOperator<Matrix,Field> _HermOpEO(_Matrix);
+      this->_HermitianRBSolver(_HermOpEO,src_o,sol_o);
+    };
+    virtual void RedBlackSolve   (Matrix & _Matrix,const std::vector<Field> &src_o,  std::vector<Field> &sol_o)
     {
-      this->_HermitianRBSolver(src_o,sol_o);
+      SchurDiagTwoOperator<Matrix,Field> _HermOpEO(_Matrix);
+      this->_HermitianRBSolver(_HermOpEO,src_o,sol_o); 
     }
-
   };
 
 

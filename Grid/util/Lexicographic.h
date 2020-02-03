@@ -7,7 +7,8 @@ namespace Grid{
   class Lexicographic {
   public:
 
-    static inline void CoorFromIndex (std::vector<int>& coor,int index,const std::vector<int> &dims){
+    template<class coor_t>
+    static accelerator_inline void CoorFromIndex (coor_t& coor,int index,const coor_t &dims){
       int nd= dims.size();
       coor.resize(nd);
       for(int d=0;d<nd;d++){
@@ -16,7 +17,8 @@ namespace Grid{
       }
     }
 
-    static inline void IndexFromCoor (const std::vector<int>& coor,int &index,const std::vector<int> &dims){
+    template<class coor_t>
+    static accelerator_inline void IndexFromCoor (const coor_t& coor,int &index,const coor_t &dims){
       int nd=dims.size();
       if(nd > coor.size())  {
 	std::cout<< "coor.size "<<coor.size()<<" >dims.size "<<dims.size()<<std::endl; 
@@ -30,7 +32,8 @@ namespace Grid{
       }
     }
 
-    static inline void IndexFromCoorReversed (const std::vector<int>& coor,int &index,const std::vector<int> &dims){
+    template<class coor_t>
+    static inline void IndexFromCoorReversed (const coor_t& coor,int &index,const coor_t &dims){
       int nd=dims.size();
       int stride=1;
       index=0;
@@ -39,7 +42,8 @@ namespace Grid{
 	stride=stride*dims[d];
       }
     }
-    static inline void CoorFromIndexReversed (std::vector<int>& coor,int index,const std::vector<int> &dims){
+    template<class coor_t>
+    static inline void CoorFromIndexReversed (coor_t& coor,int index,const coor_t &dims){
       int nd= dims.size();
       coor.resize(nd);
       for(int d=nd-1;d>=0;d--){
