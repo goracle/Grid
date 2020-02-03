@@ -481,6 +481,7 @@ case ${ac_COMMS} in
 esac
 
 AM_CONDITIONAL(BUILD_COMMS_MPI3,  [ test "${comms_type}X" == "mpi3X" ] )
+AM_CONDITIONAL(BUILD_COMMS_MPI,  [ test "${comms_type}X" == "mpiX" ] )
 AM_CONDITIONAL(BUILD_COMMS_NONE,  [ test "${comms_type}X" == "noneX" ])
 
 ############### RNG selection

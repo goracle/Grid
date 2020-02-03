@@ -407,30 +407,6 @@ public:
 };
 template<class Matrix,class Field> using SchurStagOperator = SchurStaggeredOperator<Matrix,Field>;
 
-      //dummy function; used to avoid a compiler error in a function which is overridden by a derived class ~ dsh
-      virtual void operator() (LinearOperatorBase<Field> &dummy, const Field &in, Field &out){
-	assert(0); //not supported; this function call could work but the argument list makes its use deceptive to the user
-	(*this)(in, out);
-      }
-      virtual void operator() (LinearOperatorBase<Field> &Linop, const std::vector<Field> &in, std::vector<Field> &out){
-	assert(0); //not supported; this function call could work but the argument list makes its use deceptive to the user
-	(*this)(in, out);
-      }
-      virtual void operator() (const std::vector<Field> &in,std::vector<Field> &out) {
-	assert(in.size()==out.size());
-	for(int k=0;k<in.size();k++){
-	  (*this)(in[k],out[k]);
-	}
-      }
-    };
-
-    template<class Field> class IdentityLinearFunction : public LinearFunction<Field> {
-    public:
-      void operator() (const Field &in, Field &out){
-	out = in;
-      };
-    };
-
 /////////////////////////////////////////////////////////////
 // Base classes for functions of operators
 /////////////////////////////////////////////////////////////
@@ -448,6 +424,25 @@ public:
 template<class Field> class LinearFunction {
 public:
   virtual void operator() (const Field &in, Field &out) = 0;
+
+
+      //dummy function; used to avoid a compiler error in a function which is overridden by a derived class ~ dsh
+      virtual void operator() (LinearOperatorBase<Field> &dummy, const Field &in, Field &out){
+	assert(0); //not supported; this function call could work but the argument list makes its use deceptive to the user
+	(*this)(in, out);
+      }
+      virtual void operator() (LinearOperatorBase<Field> &Linop, const std::vector<Field> &in, std::vector<Field> &out){
+	assert(0); //not supported; this function call could work but the argument list makes its use deceptive to the user
+	(*this)(in, out);
+      }
+      virtual void operator() (const std::vector<Field> &in,std::vector<Field> &out) {
+	assert(in.size()==out.size());
+	for(int k=0;k<in.size();k++){
+	  (*this)(in[k],out[k]);
+	}
+      }
+    
+
 };
 
 template<class Field> class IdentityLinearFunction : public LinearFunction<Field> {

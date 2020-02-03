@@ -486,18 +486,29 @@ namespace Grid {
       setCheckerboard(sol,sol_o_i);  assert(  sol_o_i.Checkerboard() ==Odd );
     };
 
-    virtual void RedBlackSolve   (Matrix & _Matrix,const Field &src_o, Field &sol_o)
-    {
-      SchurDiagTwoOperator<Matrix,Field> _HermOpEO(_Matrix);
-      this->_HermitianRBSolver(_HermOpEO,src_o,sol_o);
-    };
-    virtual void RedBlackSolve   (Matrix & _Matrix,const std::vector<Field> &src_o,  std::vector<Field> &sol_o)
-    {
-      SchurDiagTwoOperator<Matrix,Field> _HermOpEO(_Matrix);
-      this->_HermitianRBSolver(_HermOpEO,src_o,sol_o); 
-    }
   };
 
+  template<class Field>
+  class SchurRedBlackDiagTwoMixed: public SchurRedBlackDiagTwoSolve<Field, class LinearFunction<Field>> {
+  public:
+
+    SchurRedBlackDiagTwoMixed(LinearFunction<Field> &HermitianRBSolver, const bool initSubGuess = false,
+      const bool _solnAsInitGuess = false)  
+      : SchurRedBlackDiagTwoSolve<Field, LinearFunction<Field>>(HermitianRBSolver,initSubGuess,_solnAsInitGuess) {};
+
+    typedef CheckerBoardedSparseMatrixBase<Field> Matrix;
+
+    virtual void RedBlackSolve(Matrix & _Matrix,const Field &src_o, Field &sol_o) override
+    {
+      this->_HermitianRBSolver(src_o,sol_o);
+    }
+
+    virtual void RedBlackSolve(Matrix & _Matrix,const std::vector<Field> &src_o, std::vector<Field> &sol_o) override
+    {
+      this->_HermitianRBSolver(src_o,sol_o);
+    }
+
+  };
 
   //split cg hack, still needs fixing to conform to new standard
 
