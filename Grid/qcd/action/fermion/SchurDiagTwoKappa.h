@@ -30,6 +30,23 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 
 NAMESPACE_BEGIN(Grid);
 
+//
+// Determinant is det of middle factor
+// This assumes Mee is indept of U.
+//
+//
+template<class Impl>
+class SchurDifferentiableDiagTwo:  public SchurDiagTwoOperator<FermionOperator<Impl>,typename Impl::FermionField> 
+{
+public:
+  INHERIT_IMPL_TYPES(Impl);
+
+    typedef FermionOperator<Impl> Matrix;
+
+    SchurDifferentiableDiagTwo (Matrix &Mat) : SchurDiagTwoOperator<Matrix,FermionField>(Mat) {};
+};
+
+
 // This is specific to (Z)mobius fermions
 template<class Matrix, class Field>
 class KappaSimilarityTransform {
