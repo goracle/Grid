@@ -46,7 +46,7 @@ void CartesianCommunicator::Init(int *argc, char ***argv) {
   if ( !flag ) {
     MPI_Init_thread(argc,argv, MPI_THREAD_FUNNELED,&provided);
     if ( provided != MPI_THREAD_FUNNELED) {
-      QCD::WilsonKernelsStatic::Comms = QCD::WilsonKernelsStatic::CommsThenCompute;
+      WilsonKernelsStatic::Comms = WilsonKernelsStatic::CommsThenCompute;
     }
   }
   MPI_Comm_dup (MPI_COMM_WORLD,&communicator_world);
@@ -101,14 +101,14 @@ void CartesianCommunicator::ShiftedRanks(int dim,int shift,int &source,int &dest
   int ierr=MPI_Cart_shift(communicator,dim,shift,&source,&dest);
   assert(ierr==0);
 }
-int CartesianCommunicator::RankFromProcessorCoor(std::vector<int> &coor)
+int CartesianCommunicator::RankFromProcessorCoor(Coordinate &coor)
 {
   int rank;
   int ierr=MPI_Cart_rank  (communicator, &coor[0], &rank);
   assert(ierr==0);
   return rank;
 }
-void  CartesianCommunicator::ProcessorCoorFromRank(int rank, std::vector<int> &coor)
+void  CartesianCommunicator::ProcessorCoorFromRank(int rank, Coordinate &coor)
 {
   coor.resize(_ndimension);
   int ierr=MPI_Cart_coords  (communicator, rank, _ndimension,&coor[0]);

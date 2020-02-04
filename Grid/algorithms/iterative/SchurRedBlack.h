@@ -366,13 +366,13 @@ namespace Grid {
       /////////////////////////////////////////////////////
       // src_o = Mdag * (source_o - Moe MeeInv source_e)
       /////////////////////////////////////////////////////
-      _Matrix.MooeeInv(src_e,tmp);     assert(  tmp.checkerboard ==Even);
-      _Matrix.Meooe   (tmp,Mtmp);      assert( Mtmp.checkerboard ==Odd);     
-      tmp=src_o-Mtmp;                  assert(  tmp.checkerboard ==Odd);     
+      _Matrix.MooeeInv(src_e,tmp);     assert(  tmp.Checkerboard() ==Even);
+      _Matrix.Meooe   (tmp,Mtmp);      assert( Mtmp.Checkerboard() ==Odd);     
+      tmp=src_o-Mtmp;                  assert(  tmp.Checkerboard() ==Odd);     
 
       // get the right MpcDag
       SchurDiagMooeeOperator<Matrix,Field> _HermOpEO(_Matrix);
-      _HermOpEO.MpcDag(tmp,src_o);     assert(src_o.checkerboard ==Odd);       
+      _HermOpEO.MpcDag(tmp,src_o);     assert(src_o.Checkerboard() ==Odd);       
 
     }
     virtual void RedBlackSolution(Matrix & _Matrix,const Field &sol_o, const Field &src_e,Field &sol)
@@ -578,12 +578,12 @@ namespace Grid{
       /////////////////////////////////////////////////////
       // src_o = Mdag * (source_o - Moe MeeInv source_e)
       /////////////////////////////////////////////////////
-      _Matrix.MooeeInv(src_e[s],tmp[s]);     assert(  tmp[s].checkerboard ==Even);
-      _Matrix.Meooe   (tmp[s],Mtmp);      assert( Mtmp.checkerboard ==Odd);
-      tmp[s]=src_o[s]-Mtmp;                  assert(  tmp[s].checkerboard ==Odd);     
+      _Matrix.MooeeInv(src_e[s],tmp[s]);     assert(  tmp[s].Checkerboard() ==Even);
+      _Matrix.Meooe   (tmp[s],Mtmp);      assert( Mtmp.Checkerboard() ==Odd);
+      tmp[s]=src_o[s]-Mtmp;                  assert(  tmp[s].Checkerboard() ==Odd);     
 
       // get the right MpcDag
-      _HermOpEO.MpcDag(tmp[s],src_o[s]);     assert(src_o[s].checkerboard ==Odd);
+      _HermOpEO.MpcDag(tmp[s],src_o[s]);     assert(src_o[s].Checkerboard() ==Odd);
       if(!do_defl) _Matrix.Mooee(sol_o, tmp[s]); //initial guess taken from output vector.
       }
       //////////////////////////////////////////////////////////////
@@ -606,7 +606,7 @@ namespace Grid{
       //_HermitianRBSolver(src_o[0],tmp[0]);
       _HermitianRBSolver(src_o,tmp);
       for(size_t s=0; s<nsolve; s++){
-	assert(tmp[s].checkerboard==Odd);
+	assert(tmp[s].Checkerboard()==Odd);
 	//check residual
 	{
 	  _HermOpEO.HermOp(tmp[s], resid_rb);
@@ -618,21 +618,21 @@ namespace Grid{
 
 	//Pull low-mode part out of solution
 	if(defl_sub){
-	  assert(defl[s].checkerboard==Odd);
+	  assert(defl[s].Checkerboard()==Odd);
 	  std::cout<<GridLogMessage << "SchurRedBlackDiagTwoSplit, subtracting low mode [" << s << "]." <<std::endl;
 	  axpy(tmp[s], -1.0, defl[s], tmp[s]);
 	}
-	_Matrix.MooeeInv(tmp[s],sol_o);        assert(  sol_o.checkerboard   ==Odd);
+	_Matrix.MooeeInv(tmp[s],sol_o);        assert(  sol_o.Checkerboard()   ==Odd);
 
       ///////////////////////////////////////////////////
       // sol_e = M_ee^-1 * ( src_e - Meo sol_o )...
       ///////////////////////////////////////////////////
-      _Matrix.Meooe(sol_o,tmp[s]);        assert(  tmp[s].checkerboard   ==Even);
-      src_e[s] = src_e[s]-tmp[s];               assert(  src_e[s].checkerboard ==Even);
-      _Matrix.MooeeInv(src_e[s],sol_e);   assert(  sol_e.checkerboard ==Even);
+      _Matrix.Meooe(sol_o,tmp[s]);        assert(  tmp[s].Checkerboard()   ==Even);
+      src_e[s] = src_e[s]-tmp[s];               assert(  src_e[s].Checkerboard() ==Even);
+      _Matrix.MooeeInv(src_e[s],sol_e);   assert(  sol_e.Checkerboard() ==Even);
      
-      setCheckerboard(out[s],sol_e); assert(  sol_e.checkerboard ==Even);
-      setCheckerboard(out[s],sol_o); assert(  sol_o.checkerboard ==Odd );
+      setCheckerboard(out[s],sol_e); assert(  sol_e.Checkerboard() ==Even);
+      setCheckerboard(out[s],sol_o); assert(  sol_o.Checkerboard() ==Odd );
 
       // Verify the unprec residual
       _Matrix.M(out[s],resid); 

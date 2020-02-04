@@ -78,7 +78,7 @@ public:
       Linop_f_use = Linop_fallback;
       std::cout << GridLogMessage << "ConjugateGradientReliableUpdate starting with fallback linear operator" << std::endl;
 
-      psi.checkerboard = src.checkerboard;
+      psi.Checkerboard() = src.Checkerboard();
       conformable(psi, src);
 
     RealD cp, c, a, d, b, ssq, qq, b_pred;

@@ -132,7 +132,7 @@ void CartesianCommunicator::AllToAll(void  *in,void *out,uint64_t words,uint64_t
 #endif
 
 #if defined( GRID_COMMS_MPI) || defined (GRID_COMMS_MPIT) 
-CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,const CartesianCommunicator &parent,int &srank) 
+CartesianCommunicator::CartesianCommunicator(const Coordinate &processors,const CartesianCommunicator &parent,int &srank) 
 {
   _ndimension = processors.size();
 
@@ -160,9 +160,9 @@ CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors,
   int Nchild = Nparent/childsize;
   assert (childsize * Nchild == Nparent);
 
-  std::vector<int> ccoor(_ndimension); // coor within subcommunicator
-  std::vector<int> scoor(_ndimension); // coor of split within parent
-  std::vector<int> ssize(_ndimension); // coor of split within parent
+  Coordinate ccoor(_ndimension); // coor within subcommunicator
+  Coordinate scoor(_ndimension); // coor of split within parent
+  Coordinate ssize(_ndimension); // coor of split within parent
 
   for(int d=0;d<_ndimension;d++){
     ccoor[d] = parent_processor_coor[d] % processors[d];
@@ -238,7 +238,7 @@ bool split_done = false;
 //////////////////////////////////////////////////////////////////////////////////////////////////////
 // Take an MPI_Comm and self assemble
 //////////////////////////////////////////////////////////////////////////////////////////////////////
-void CartesianCommunicator::InitFromMPICommunicator(const std::vector<int> &processors, MPI_Comm communicator_base)
+void CartesianCommunicator::InitFromMPICommunicator(const Coordinate &processors, MPI_Comm communicator_base)
 {
   SetCommunicator(communicator_base);
   _ndimension = processors.size();
@@ -297,7 +297,7 @@ void CartesianCommunicator::InitFromMPICommunicator(const std::vector<int> &proc
 #endif
 
 #if defined(GRID_COMMS_MPI) || defined (GRID_COMMS_MPIT) 
-CartesianCommunicator::CartesianCommunicator(const std::vector<int> &processors) 
+CartesianCommunicator::CartesianCommunicator(const Coordinate &processors) 
 {
   InitFromMPICommunicator(processors,communicator_world);
 }
