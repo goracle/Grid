@@ -243,7 +243,7 @@ AC_SEARCH_LIBS([crc32], [z],
 AC_SEARCH_LIBS([H5Fopen], [hdf5_cpp],
                [AC_DEFINE([HAVE_HDF5], [1], [Define to 1 if you have the `HDF5' library])]
                [have_hdf5=true]
-               [LIBS="${LIBS} -lhdf5"], [], [-lhdf5])
+               [LIBS="${LIBS} "], [], [-lhdf5])
 AM_CONDITIONAL(BUILD_HDF5, [ test "${have_hdf5}X" == "trueX" ])
 
 CXXFLAGS=$CXXFLAGS_CPY
