@@ -8,7 +8,7 @@
 #include <Hadrons/Modules/MContraction/A2AFourQuarkContraction.hpp>
 #include <Hadrons/Modules/MContraction/A2ALoop.hpp>
 #include <Hadrons/Modules/MContraction/A2AMesonField.hpp>
-#include <Hadrons/Modules/MContraction/Baryon.hpp>
+//#include <Hadrons/Modules/MContraction/Baryon.hpp>
 #include <Hadrons/Modules/MContraction/DiscLoop.hpp>
 #include <Hadrons/Modules/MContraction/Gamma3pt.hpp>
 #include <Hadrons/Modules/MContraction/Meson.hpp>
