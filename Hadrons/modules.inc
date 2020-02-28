@@ -9,7 +9,6 @@ modules_cc =\
   Modules/MContraction/A2AFourQuarkContraction.cc \
   Modules/MContraction/A2ALoop.cc \
   Modules/MContraction/A2AMesonField.cc \
-  Modules/MContraction/Baryon.cc \
   Modules/MContraction/DiscLoop.cc \
   Modules/MContraction/Gamma3pt.cc \
   Modules/MContraction/Meson.cc \
@@ -94,7 +93,6 @@ modules_hpp =\
   Modules/MContraction/A2AFourQuarkContraction.hpp \
   Modules/MContraction/A2ALoop.hpp \
   Modules/MContraction/A2AMesonField.hpp \
-  Modules/MContraction/Baryon.hpp \
   Modules/MContraction/DiscLoop.hpp \
   Modules/MContraction/Gamma3pt.hpp \
   Modules/MContraction/Meson.hpp \
