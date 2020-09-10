@@ -94,7 +94,7 @@ void ContinuedFractionFermion5D<Impl>::SetCoefficientsZolotarev(RealD zolo_hi,Ap
 
 
 template<class Impl>
-RealD  ContinuedFractionFermion5D<Impl>::M           (const FermionField &psi, FermionField &chi)
+void ContinuedFractionFermion5D<Impl>::M           (const FermionField &psi, FermionField &chi)
 {
   int Ls = this->Ls;
 
@@ -116,15 +116,14 @@ RealD  ContinuedFractionFermion5D<Impl>::M           (const FermionField &psi, F
     }
     sign=-sign; 
   }
-  return norm2(chi);
 }
 template<class Impl>
-RealD  ContinuedFractionFermion5D<Impl>::Mdag        (const FermionField &psi, FermionField &chi)
+void ContinuedFractionFermion5D<Impl>::Mdag        (const FermionField &psi, FermionField &chi)
 {
   // This matrix is already hermitian. (g5 Dw) = Dw dag g5 = (g5 Dw)dag
   // The rest of matrix is symmetric.
   // Can ignore "dag"
-  return M(psi,chi);
+  M(psi,chi);
 }
 template<class Impl>
 void  ContinuedFractionFermion5D<Impl>::Mdir (const FermionField &psi, FermionField &chi,int dir,int disp){
@@ -140,6 +139,25 @@ void  ContinuedFractionFermion5D<Impl>::Mdir (const FermionField &psi, FermionFi
       ag5xpby_ssp(chi,cc[s]*Beta[s]*sign*ZoloHiInv,chi,0.0,chi,s,s);
     }
     sign=-sign; 
+  }
+}
+template<class Impl>
+void  ContinuedFractionFermion5D<Impl>::MdirAll (const FermionField &psi, std::vector<FermionField> &chi)
+{
+  int Ls = this->Ls;
+
+  this->DhopDirAll(psi,chi); // Dslash on diagonal. g5 Dslash is hermitian
+
+  for(int p=0;p<chi.size();p++){
+    int sign=1;
+    for(int s=0;s<Ls;s++){
+      if ( s==(Ls-1) ){
+	ag5xpby_ssp(chi[p],Beta[s]*ZoloHiInv,chi[p],0.0,chi[p],s,s);
+      } else {
+	ag5xpby_ssp(chi[p],cc[s]*Beta[s]*sign*ZoloHiInv,chi[p],0.0,chi[p],s,s);
+      }
+      sign=-sign; 
+    }
   }
 }
 template<class Impl>

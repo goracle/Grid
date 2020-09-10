@@ -52,6 +52,24 @@ namespace PeriodicBC {
     tmp = adj(Link)*field;
     return Cshift(tmp,mu,-1);// moves towards positive mu
   }
+
+  template<class gauge,class Expr,typename std::enable_if<is_lattice_expr<Expr>::value,void>::type * = nullptr>
+    auto  CovShiftForward(const Lattice<gauge> &Link, 
+			  int mu,
+			  const Expr &expr) -> decltype(closure(expr))
+  {
+    auto arg = closure(expr);
+    return CovShiftForward(Link,mu,arg);
+  }
+  template<class gauge,class Expr,typename std::enable_if<is_lattice_expr<Expr>::value,void>::type * = nullptr>
+    auto  CovShiftBackward(const Lattice<gauge> &Link, 
+			   int mu,
+			   const Expr &expr) -> decltype(closure(expr))
+  {
+    auto arg = closure(expr);
+    return CovShiftBackward(Link,mu,arg);
+  }
+
 }
 
 
@@ -120,6 +138,23 @@ namespace ConjugateBC {
     tmp = where(coor==Lmu,conjugate(tmp),tmp);
     //    std::cout<<"Gparity::CovCshiftBackward mu="<<mu<<std::endl;
     return Cshift(tmp,mu,-1);// moves towards positive mu
+  }
+
+  template<class gauge,class Expr,typename std::enable_if<is_lattice_expr<Expr>::value,void>::type * = nullptr>
+    auto  CovShiftForward(const Lattice<gauge> &Link, 
+			  int mu,
+			  const Expr &expr) -> decltype(closure(expr))
+  {
+    auto arg = closure(expr);
+    return CovShiftForward(Link,mu,arg);
+  }
+  template<class gauge,class Expr,typename std::enable_if<is_lattice_expr<Expr>::value,void>::type * = nullptr>
+    auto  CovShiftBackward(const Lattice<gauge> &Link, 
+			   int mu,
+			   const Expr &expr)  -> decltype(closure(expr))
+  {
+    auto arg = closure(expr);
+    return CovShiftBackward(Link,mu,arg);
   }
 
 }

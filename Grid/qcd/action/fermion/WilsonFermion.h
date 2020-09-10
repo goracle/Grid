@@ -50,14 +50,14 @@ public:
   double, nu);
 
   WilsonAnisotropyCoefficients():
-    isAnisotropic(false), 
-    t_direction(Nd-1), 
-    xi_0(1.0), 
+    isAnisotropic(false),
+    t_direction(Nd-1),
+    xi_0(1.0),
     nu(1.0){}
 };
 
 template <class Impl>
-class WilsonFermion : public WilsonKernels<Impl>, public WilsonFermionStatic 
+class WilsonFermion : public WilsonKernels<Impl>, public WilsonFermionStatic
 {
 public:
   INHERIT_IMPL_TYPES(Impl);
@@ -74,12 +74,26 @@ public:
   FermionField _tmp;
   FermionField &tmp(void) { return _tmp; }
 
+  void Report(void);
+  void ZeroCounters(void);
+  double DhopCalls;
+  double DhopCommTime;
+  double DhopComputeTime;
+  double DhopComputeTime2;
+  double DhopFaceTime;
+  double DhopTotalTime;
+
+  double DerivCalls;
+  double DerivCommTime;
+  double DerivComputeTime;
+  double DerivDhopComputeTime;
+
   //////////////////////////////////////////////////////////////////
   // override multiply; cut number routines if pass dagger argument
   // and also make interface more uniformly consistent
   //////////////////////////////////////////////////////////////////
-  virtual RealD M(const FermionField &in, FermionField &out);
-  virtual RealD Mdag(const FermionField &in, FermionField &out);
+  virtual void  M(const FermionField &in, FermionField &out);
+  virtual void  Mdag(const FermionField &in, FermionField &out);
 
   /////////////////////////////////////////////////////////
   // half checkerboard operations
@@ -115,9 +129,10 @@ public:
   // Multigrid assistance; force term uses too
   ///////////////////////////////////////////////////////////////
   void Mdir(const FermionField &in, FermionField &out, int dir, int disp);
+  void MdirAll(const FermionField &in, std::vector<FermionField> &out);
   void DhopDir(const FermionField &in, FermionField &out, int dir, int disp);
-  void DhopDirDisp(const FermionField &in, FermionField &out, int dirdisp,
-                   int gamma, int dag);
+  void DhopDirAll(const FermionField &in, std::vector<FermionField> &out);
+  void DhopDirCalc(const FermionField &in, FermionField &out, int dirdisp,int gamma, int dag);
 
   ///////////////////////////////////////////////////////////////
   // Extra methods added by derived
@@ -137,7 +152,7 @@ public:
   // Constructor
   WilsonFermion(GaugeField &_Umu, GridCartesian &Fgrid,
                 GridRedBlackCartesian &Hgrid, RealD _mass,
-                const ImplParams &p = ImplParams(), 
+                const ImplParams &p = ImplParams(),
                 const WilsonAnisotropyCoefficients &anis = WilsonAnisotropyCoefficients() );
 
   // DoubleStore impl dependent
@@ -169,29 +184,29 @@ public:
 
   LebesgueOrder Lebesgue;
   LebesgueOrder LebesgueEvenOdd;
-  
+
   WilsonAnisotropyCoefficients anisotropyCoeff;
-  
+
   ///////////////////////////////////////////////////////////////
   // Conserved current utilities
   ///////////////////////////////////////////////////////////////
   void ContractConservedCurrent(PropagatorField &q_in_1,
                                 PropagatorField &q_in_2,
                                 PropagatorField &q_out,
+                                PropagatorField &phys_src,
                                 Current curr_type,
                                 unsigned int mu);
   void SeqConservedCurrent(PropagatorField &q_in,
                            PropagatorField &q_out,
+                           PropagatorField &phys_src,
                            Current curr_type,
-                           unsigned int mu, 
+                           unsigned int mu,
                            unsigned int tmin,
-                             unsigned int tmax,
-			     ComplexField &lattice_cmplx);
+			   unsigned int tmax,
+			   ComplexField &lattice_cmplx);
 };
 
 typedef WilsonFermion<WilsonImplF> WilsonFermionF;
 typedef WilsonFermion<WilsonImplD> WilsonFermionD;
 
 NAMESPACE_END(Grid);
-
-

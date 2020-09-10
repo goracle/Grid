@@ -37,142 +37,6 @@ Author: Christoph Lehner <clehner@bnl.gov>
 
 NAMESPACE_BEGIN(Grid); 
 
-  ////////////////////////////////////////////////////////
-  // Move following 100 LOC to lattice/Lattice_basis.h
-  ////////////////////////////////////////////////////////
-template<class Field>
-void basisOrthogonalize(std::vector<Field> &basis,Field &w,int k) 
-{
-  for(int j=0; j<k; ++j){
-    auto ip = innerProduct(basis[j],w);
-    w = w - ip*basis[j];
-  }
-}
-
-template<class Field>
-void basisRotate(std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j0, int j1, int k0,int k1,int Nm) 
-{
-  typedef decltype(basis[0].View()) View;
-  auto tmp_v = basis[0].View();
-  std::vector<View> basis_v(basis.size(),tmp_v);
-  typedef typename Field::vector_object vobj;
-  GridBase* grid = basis[0].Grid();
-      
-  for(int k=0;k<basis.size();k++){
-    basis_v[k] = basis[k].View();
-  }
-
-  std::vector < vobj , commAllocator<vobj> > Bt(thread_max() * Nm); // Thread private
-
-  thread_region
-  {
-    vobj* B = Bt.data() + Nm * thread_num();
-
-    thread_for_in_region(ss, grid->oSites(),{
-      for(int j=j0; j<j1; ++j) B[j]=0.;
-      
-      for(int j=j0; j<j1; ++j){
-	for(int k=k0; k<k1; ++k){
-	  B[j] +=Qt(j,k) * basis_v[k][ss];
-	}
-      }
-      for(int j=j0; j<j1; ++j){
-	basis_v[j][ss] = B[j];
-      }
-    });
-  }
-}
-
-// Extract a single rotated vector
-template<class Field>
-void basisRotateJ(Field &result,std::vector<Field> &basis,Eigen::MatrixXd& Qt,int j, int k0,int k1,int Nm) 
-{
-  typedef typename Field::vector_object vobj;
-  GridBase* grid = basis[0].Grid();
-
-  result.Checkerboard() = basis[0].Checkerboard();
-  auto result_v=result.View();
-  thread_for(ss, grid->oSites(),{
-    vobj B = Zero();
-    for(int k=k0; k<k1; ++k){
-      auto basis_k = basis[k].View();
-      B +=Qt(j,k) * basis_k[ss];
-    }
-    result_v[ss] = B;
-  });
-}
-
-template<class Field>
-void basisReorderInPlace(std::vector<Field> &_v,std::vector<RealD>& sort_vals, std::vector<int>& idx) 
-{
-  int vlen = idx.size();
-
-  assert(vlen>=1);
-  assert(vlen<=sort_vals.size());
-  assert(vlen<=_v.size());
-
-  for (size_t i=0;i<vlen;i++) {
-
-    if (idx[i] != i) {
-
-      //////////////////////////////////////
-      // idx[i] is a table of desired sources giving a permutation.
-      // Swap v[i] with v[idx[i]].
-      // Find  j>i for which _vnew[j] = _vold[i],
-      // track the move idx[j] => idx[i]
-      // track the move idx[i] => i
-      //////////////////////////////////////
-      size_t j;
-      for (j=i;j<idx.size();j++)
-	if (idx[j]==i)
-	  break;
-
-      assert(idx[i] > i);     assert(j!=idx.size());      assert(idx[j]==i);
-
-      swap(_v[i],_v[idx[i]]); // should use vector move constructor, no data copy
-      std::swap(sort_vals[i],sort_vals[idx[i]]);
-
-      idx[j] = idx[i];
-      idx[i] = i;
-    }
-  }
-}
-
-inline std::vector<int> basisSortGetIndex(std::vector<RealD>& sort_vals) 
-{
-  std::vector<int> idx(sort_vals.size());
-  std::iota(idx.begin(), idx.end(), 0);
-
-  // sort indexes based on comparing values in v
-  std::sort(idx.begin(), idx.end(), [&sort_vals](int i1, int i2) {
-    return ::fabs(sort_vals[i1]) < ::fabs(sort_vals[i2]);
-  });
-  return idx;
-}
-
-template<class Field>
-void basisSortInPlace(std::vector<Field> & _v,std::vector<RealD>& sort_vals, bool reverse) 
-{
-  std::vector<int> idx = basisSortGetIndex(sort_vals);
-  if (reverse)
-    std::reverse(idx.begin(), idx.end());
-  
-  basisReorderInPlace(_v,sort_vals,idx);
-}
-
-// PAB: faster to compute the inner products first then fuse loops.
-// If performance critical can improve.
-template<class Field>
-void basisDeflate(const std::vector<Field> &_v,const std::vector<RealD>& eval,const Field& src_orig,Field& result) {
-  result = Zero();
-  assert(_v.size()==eval.size());
-  int N = (int)_v.size();
-  for (int i=0;i<N;i++) {
-    Field& tmp = _v[i];
-    axpy(result,TensorRemove(innerProduct(tmp,src_orig)) / eval[i],tmp,result);
-  }
-}
-
 /////////////////////////////////////////////////////////////
 // Implicitly restarted lanczos
 /////////////////////////////////////////////////////////////
@@ -282,7 +146,7 @@ public:
 			    RealD _eresid, // resid in lmdue deficit 
 			    int _MaxIter, // Max iterations
 			    RealD _betastp=0.0, // if beta(k) < betastp: converged
-			    int _MinRestart=1, int _orth_period = 1,
+			    int _MinRestart=0, int _orth_period = 1,
 			    IRLdiagonalisation _diagonalisation= IRLdiagonaliseWithEigen) :
     SimpleTester(HermOp), _PolyOp(PolyOp),      _HermOp(HermOp), _Tester(Tester),
     Nstop(_Nstop)  ,      Nk(_Nk),      Nm(_Nm),
@@ -298,7 +162,7 @@ public:
 			       RealD _eresid, // resid in lmdue deficit 
 			       int _MaxIter, // Max iterations
 			       RealD _betastp=0.0, // if beta(k) < betastp: converged
-			       int _MinRestart=1, int _orth_period = 1,
+			       int _MinRestart=0, int _orth_period = 1,
 			       IRLdiagonalisation _diagonalisation= IRLdiagonaliseWithEigen) :
     SimpleTester(HermOp),  _PolyOp(PolyOp),      _HermOp(HermOp), _Tester(SimpleTester),
     Nstop(_Nstop)  ,      Nk(_Nk),      Nm(_Nm),
@@ -347,7 +211,7 @@ until convergence
     GridBase *grid = src.Grid();
     assert(grid == evec[0].Grid());
     
-    GridLogIRL.TimingMode(1);
+    //    GridLogIRL.TimingMode(1);
     std::cout << GridLogIRL <<"**************************************************************************"<< std::endl;
     std::cout << GridLogIRL <<" ImplicitlyRestartedLanczos::calc() starting iteration 0 /  "<< MaxIter<< std::endl;
     std::cout << GridLogIRL <<"**************************************************************************"<< std::endl;
@@ -372,14 +236,17 @@ until convergence
     {
       auto src_n = src;
       auto tmp = src;
+      std::cout << GridLogIRL << " IRL source norm " << norm2(src) << std::endl;
       const int _MAX_ITER_IRL_MEVAPP_ = 50;
       for (int i=0;i<_MAX_ITER_IRL_MEVAPP_;i++) {
 	normalise(src_n);
 	_HermOp(src_n,tmp);
+	//	std::cout << GridLogMessage<< tmp<<std::endl; exit(0);
+	//	std::cout << GridLogIRL << " _HermOp " << norm2(tmp) << std::endl;
 	RealD vnum = real(innerProduct(src_n,tmp)); // HermOp.
 	RealD vden = norm2(src_n);
 	RealD na = vnum/vden;
-	if (fabs(evalMaxApprox/na - 1.0) < 0.05)
+	if (fabs(evalMaxApprox/na - 1.0) < 0.0001)
 	  i=_MAX_ITER_IRL_MEVAPP_;
 	evalMaxApprox = na;
 	std::cout << GridLogIRL << " Approximation of largest eigenvalue: " << evalMaxApprox << std::endl;
@@ -577,11 +444,11 @@ until convergence
 /* Saad PP. 195
 1. Choose an initial vector v1 of 2-norm unity. Set β1 ≡ 0, v0 ≡ 0
 2. For k = 1,2,...,m Do:
-3. wk:=Avk−βkv_{k−1}      
-4. αk:=(wk,vk)       // 
-5. wk:=wk−αkvk       // wk orthog vk 
-6. βk+1 := ∥wk∥2. If βk+1 = 0 then Stop
-7. vk+1 := wk/βk+1
+3. wk:=Avk - b_k v_{k-1}      
+4. ak:=(wk,vk)       // 
+5. wk:=wk-akvk       // wk orthog vk 
+6. bk+1 := ||wk||_2. If b_k+1 = 0 then Stop
+7. vk+1 := wk/b_k+1
 8. EndDo
  */
   void step(std::vector<RealD>& lmd,
@@ -589,6 +456,7 @@ until convergence
 	    std::vector<Field>& evec,
 	    Field& w,int Nm,int k)
   {
+    std::cout<<GridLogIRL << "Lanczos step " <<k<<std::endl;
     const RealD tiny = 1.0e-20;
     assert( k< Nm );
 
@@ -600,20 +468,20 @@ until convergence
 
     if(k>0) w -= lme[k-1] * evec[k-1];
 
-    ComplexD zalph = innerProduct(evec_k,w); // 4. αk:=(wk,vk)
+    ComplexD zalph = innerProduct(evec_k,w);
     RealD     alph = real(zalph);
 
-    w = w - alph * evec_k;// 5. wk:=wk−αkvk
+    w = w - alph * evec_k;
 
-    RealD beta = normalise(w); // 6. βk+1 := ∥wk∥2. If βk+1 = 0 then Stop
-    // 7. vk+1 := wk/βk+1
+    RealD beta = normalise(w); 
 
     lmd[k] = alph;
     lme[k] = beta;
 
-    if (k>0 && k % orth_period == 0) {
+    if ( (k>0) && ( (k % orth_period) == 0 )) {
+      std::cout<<GridLogIRL << "Orthogonalising " <<k<<std::endl;
       orthogonalize(w,evec,k); // orthonormalise
-      std::cout<<GridLogIRL << "Orthogonalised " <<std::endl;
+      std::cout<<GridLogIRL << "Orthogonalised " <<k<<std::endl;
     }
 
     if(k < Nm-1) evec[k+1] = w;
@@ -621,6 +489,8 @@ until convergence
     std::cout<<GridLogIRL << "alpha[" << k << "] = " << zalph << " beta[" << k << "] = "<<beta<<std::endl;
     if ( beta < tiny ) 
       std::cout<<GridLogIRL << " beta is tiny "<<beta<<std::endl;
+
+    std::cout<<GridLogIRL << "Lanczos step complete " <<k<<std::endl;
   }
 
   void diagonalize_Eigen(std::vector<RealD>& lmd, std::vector<RealD>& lme, 

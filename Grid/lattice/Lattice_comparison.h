@@ -42,34 +42,6 @@ NAMESPACE_BEGIN(Grid);
 
 typedef iScalar<vInteger> vPredicate ;
 
-/*
-template <class iobj, class vobj, class robj> accelerator_inline 
-vobj predicatedWhere(const iobj &predicate, const vobj &iftrue, const robj &iffalse) 
-{
-  typename std::remove_const<vobj>::type ret;
-
-  typedef typename vobj::scalar_object scalar_object;
-  typedef typename vobj::scalar_type scalar_type;
-  typedef typename vobj::vector_type vector_type;
-
-  const int Nsimd = vobj::vector_type::Nsimd();
-
-  ExtractBuffer<Integer> mask(Nsimd);
-  ExtractBuffer<scalar_object> truevals(Nsimd);
-  ExtractBuffer<scalar_object> falsevals(Nsimd);
-
-  extract(iftrue, truevals);
-  extract(iffalse, falsevals);
-  extract<vInteger, Integer>(TensorRemove(predicate), mask);
-
-  for (int s = 0; s < Nsimd; s++) {
-    if (mask[s]) falsevals[s] = truevals[s];
-  }
-
-  merge(ret, falsevals);
-  return ret;
-}
-*/
 //////////////////////////////////////////////////////////////////////////
 // compare lattice to lattice
 //////////////////////////////////////////////////////////////////////////
@@ -78,9 +50,9 @@ template<class vfunctor,class lobj,class robj>
 inline Lattice<vPredicate> LLComparison(vfunctor op,const Lattice<lobj> &lhs,const Lattice<robj> &rhs)
 {
   Lattice<vPredicate> ret(rhs.Grid());
-  auto lhs_v = lhs.View();
-  auto rhs_v = rhs.View();
-  auto ret_v = ret.View();
+  autoView( lhs_v, lhs, CpuRead);
+  autoView( rhs_v, rhs, CpuRead);
+  autoView( ret_v, ret, CpuWrite);
   thread_for( ss, rhs_v.size(), {
       ret_v[ss]=op(lhs_v[ss],rhs_v[ss]);
   });
@@ -93,8 +65,8 @@ template<class vfunctor,class lobj,class robj>
 inline Lattice<vPredicate> LSComparison(vfunctor op,const Lattice<lobj> &lhs,const robj &rhs)
 {
   Lattice<vPredicate> ret(lhs.Grid());
-  auto lhs_v = lhs.View();
-  auto ret_v = ret.View();
+  autoView( lhs_v, lhs, CpuRead);
+  autoView( ret_v, ret, CpuWrite);
   thread_for( ss, lhs_v.size(), {
     ret_v[ss]=op(lhs_v[ss],rhs);
   });
@@ -107,8 +79,8 @@ template<class vfunctor,class lobj,class robj>
 inline Lattice<vPredicate> SLComparison(vfunctor op,const lobj &lhs,const Lattice<robj> &rhs)
 {
   Lattice<vPredicate> ret(rhs.Grid());
-  auto rhs_v = rhs.View();
-  auto ret_v = ret.View();
+  autoView( rhs_v, rhs, CpuRead);
+  autoView( ret_v, ret, CpuWrite);
   thread_for( ss, rhs_v.size(), {
     ret_v[ss]=op(lhs,rhs_v[ss]);
   });

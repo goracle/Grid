@@ -1,4 +1,3 @@
-
 /*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
@@ -99,8 +98,8 @@ public:
   GridBase *FermionRedBlackGrid(void)    { return _FiveDimRedBlackGrid;}
 
   // full checkerboard operations; leave unimplemented as abstract for now
-  virtual RealD  M    (const FermionField &in, FermionField &out){assert(0); return 0.0;};
-  virtual RealD  Mdag (const FermionField &in, FermionField &out){assert(0); return 0.0;};
+  virtual void   M    (const FermionField &in, FermionField &out){assert(0);};
+  virtual void   Mdag (const FermionField &in, FermionField &out){assert(0);};
 
   // half checkerboard operations; leave unimplemented as abstract for now
   virtual void   Meooe       (const FermionField &in, FermionField &out){assert(0);};
@@ -111,15 +110,16 @@ public:
   virtual void   MooeeDag    (const FermionField &in, FermionField &out){assert(0);};
   virtual void   MooeeInvDag (const FermionField &in, FermionField &out){assert(0);};
   virtual void   Mdir   (const FermionField &in, FermionField &out,int dir,int disp){assert(0);};   // case by case Wilson, Clover, Cayley, ContFrac, PartFrac
+  virtual void   MdirAll(const FermionField &in, std::vector<FermionField> &out){assert(0);};   // case by case Wilson, Clover, Cayley, ContFrac, PartFrac
 
   // These can be overridden by fancy 5d chiral action
   virtual void DhopDeriv  (GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
   virtual void DhopDerivEO(GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
   virtual void DhopDerivOE(GaugeField &mat,const FermionField &U,const FermionField &V,int dag);
 
-      void MomentumSpacePropagatorHt_5d(FermionField &out,const FermionField &in,RealD mass,std::vector<double> twist) ;
-      void MomentumSpacePropagatorHt(FermionField &out,const FermionField &in,RealD mass,std::vector<double> twist) ;
-      void MomentumSpacePropagatorHw(FermionField &out,const FermionField &in,RealD mass,std::vector<double> twist) ;
+  void MomentumSpacePropagatorHt_5d(FermionField &out,const FermionField &in,RealD mass,std::vector<double> twist) ;
+  void MomentumSpacePropagatorHt(FermionField &out,const FermionField &in,RealD mass,std::vector<double> twist) ;
+  void MomentumSpacePropagatorHw(FermionField &out,const FermionField &in,RealD mass,std::vector<double> twist) ;
 
   // Implement hopping term non-hermitian hopping term; half cb or both
   // Implement s-diagonal DW
@@ -131,6 +131,9 @@ public:
   // add a DhopComm
   // -- suboptimal interface will presently trigger multiple comms.
   void DhopDir(const FermionField &in, FermionField &out,int dir,int disp);
+  void DhopDirAll(const FermionField &in,std::vector<FermionField> &out);
+  void DhopDirComms(const FermionField &in);
+  void DhopDirCalc(const FermionField &in, FermionField &out,int point);
     
   ///////////////////////////////////////////////////////////////
   // New methods added 
@@ -212,26 +215,8 @@ public:
   LebesgueOrder LebesgueEvenOdd;
     
   // Comms buffer
-  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  comm_buf;
-    
-  ///////////////////////////////////////////////////////////////
-  // Conserved current utilities
-  ///////////////////////////////////////////////////////////////
-  void ContractConservedCurrent(PropagatorField &q_in_1,
-				PropagatorField &q_in_2,
-				PropagatorField &q_out,
-				Current curr_type, 
-				unsigned int mu);
-  void SeqConservedCurrent(PropagatorField &q_in,
-			   PropagatorField &q_out,
-			   Current curr_type,
-			   unsigned int mu,
-			   unsigned int tmin,
-			   unsigned int tmax,
-			   ComplexField &lattice_cmplx);
+  //  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  comm_buf;
 
-  void ContractJ5q(PropagatorField &q_in,ComplexField &J5q);
-  void ContractJ5q(FermionField &q_in,ComplexField &J5q);
 
 };
 

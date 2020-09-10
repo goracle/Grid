@@ -1,4 +1,3 @@
-
 /*************************************************************************************
 
     Grid physics library, www.github.com/paboyle/Grid 
@@ -62,8 +61,8 @@ public:
   double DhopCalls;
   double DhopCommTime;
   double DhopComputeTime;
-      double DhopComputeTime2;
-      double DhopFaceTime;
+  double DhopComputeTime2;
+  double DhopFaceTime;
 
   ///////////////////////////////////////////////////////////////
   // Implement the abstract base
@@ -74,8 +73,8 @@ public:
   GridBase *FermionRedBlackGrid(void)    { return _FiveDimRedBlackGrid;}
 
   // full checkerboard operations; leave unimplemented as abstract for now
-  RealD  M    (const FermionField &in, FermionField &out);
-  RealD  Mdag (const FermionField &in, FermionField &out);
+  void  M    (const FermionField &in, FermionField &out);
+  void  Mdag (const FermionField &in, FermionField &out);
 
   // half checkerboard operations
   void   Meooe       (const FermionField &in, FermionField &out);
@@ -86,7 +85,8 @@ public:
   void   MooeeDag    (const FermionField &in, FermionField &out);
   void   MooeeInvDag (const FermionField &in, FermionField &out);
 
-  void   Mdir   (const FermionField &in, FermionField &out,int dir,int disp);
+  void Mdir   (const FermionField &in, FermionField &out,int dir,int disp);
+  void MdirAll(const FermionField &in, std::vector<FermionField> &out);
   void DhopDir(const FermionField &in, FermionField &out,int dir,int disp);
 
   // These can be overridden by fancy 5d chiral action
@@ -208,7 +208,7 @@ public:
   LebesgueOrder LebesgueEvenOdd;
     
   // Comms buffer
-  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  comm_buf;
+  //  std::vector<SiteHalfSpinor,alignedAllocator<SiteHalfSpinor> >  comm_buf;
     
   ///////////////////////////////////////////////////////////////
   // Conserved current utilities
@@ -216,15 +216,17 @@ public:
   void ContractConservedCurrent(PropagatorField &q_in_1,
 				PropagatorField &q_in_2,
 				PropagatorField &q_out,
+				PropagatorField &src,
 				Current curr_type,
 				unsigned int mu);
   void SeqConservedCurrent(PropagatorField &q_in,
 			   PropagatorField &q_out,
+			   PropagatorField &src,
 			   Current curr_type,
 			   unsigned int mu, 
 			   unsigned int tmin,
-                             unsigned int tmax,
-                 	     ComplexField &lattice_cmplx);
+			   unsigned int tmax,
+			   ComplexField &lattice_cmplx);
 };
 
 NAMESPACE_END(Grid);

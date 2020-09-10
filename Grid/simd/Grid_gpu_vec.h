@@ -32,7 +32,12 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 */
 //----------------------------------------------------------------------
 
+#ifdef GRID_CUDA
 #include <cuda_fp16.h>
+#endif
+#ifdef GRID_HIP
+#include <hip/hip_fp16.h>
+#endif
 
 namespace Grid {
 
@@ -142,7 +147,7 @@ typedef GpuVector<NSIMD_Integer,  Integer     > GpuVectorI;
 accelerator_inline float half2float(half h)
 {
   float f;
-#ifdef __CUDA_ARCH__
+#ifdef GRID_SIMT
   f = __half2float(h);
 #else 
   //f = __half2float(h);
@@ -156,7 +161,7 @@ accelerator_inline float half2float(half h)
 accelerator_inline half float2half(float f)
 {
   half h;
-#ifdef __CUDA_ARCH__
+#ifdef GRID_SIMT
   h = __float2half(f);
 #else
   Grid_half hh = sfw_float_to_half(f);
@@ -403,6 +408,10 @@ namespace Optimization {
     accelerator_inline GpuVectorRD operator()(GpuVectorRD a, GpuVectorRD b){
       return a/b;
     }
+    accelerator_inline GpuVectorI operator()(GpuVectorI a, GpuVectorI b){
+      return a/b;
+    }
+
     // Danger -- element wise divide fro complex, not complex div. 
     // See Grid_vector_types.h lines around 735, applied after "toReal"
     accelerator_inline GpuVectorCF operator()(GpuVectorCF a, GpuVectorCF b){

@@ -60,48 +60,25 @@ public:
 			    int Ls, int Nsite, const FermionField &in, FermionField &out,
 			    int interior=1,int exterior=1) ;
 
+  static void DhopDirAll( StencilImpl &st, DoubledGaugeField &U,SiteHalfSpinor *buf, int Ls,
+			  int Nsite, const FermionField &in, std::vector<FermionField> &out) ;
+
   static void DhopDirKernel(StencilImpl &st, DoubledGaugeField &U,SiteHalfSpinor * buf,
 			    int Ls, int Nsite, const FermionField &in, FermionField &out, int dirdisp, int gamma);
 
-  //////////////////////////////////////////////////////////////////////////////
-  // Utilities for inserting Wilson conserved current.
-  //////////////////////////////////////////////////////////////////////////////
-  static void ContractConservedCurrentSiteFwd(const SitePropagator &q_in_1,
-                                       const SitePropagator &q_in_2,
-                                       SitePropagator &q_out,
-                                       DoubledGaugeFieldView &U,
-                                       unsigned int sU,
-                                       unsigned int mu,
-                                       bool switch_sign = false);
-
-  static void ContractConservedCurrentSiteBwd(const SitePropagator &q_in_1,
-                                       const SitePropagator &q_in_2,
-                                       SitePropagator &q_out,
-                                       DoubledGaugeFieldView &U,
-                                       unsigned int sU,
-                                       unsigned int mu,
-                                       bool switch_sign = false);
-
-  static void SeqConservedCurrentSiteFwd(const SitePropagator &q_in, 
-                                  SitePropagator &q_out,
-                                  DoubledGaugeFieldView &U,
-                                  unsigned int sU,
-                                  unsigned int mu,
-                                  vPredicate t_mask,
-                                  bool switch_sign = false);
-
-  static void SeqConservedCurrentSiteBwd(const SitePropagator &q_in,
-                                  SitePropagator &q_out,
-                                  DoubledGaugeFieldView &U,
-                                  unsigned int sU,
-                                  unsigned int mu,
-                                  vPredicate t_mask,
-                                  bool switch_sign = false);
-
 private:
 
-  static accelerator void DhopDirK(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor * buf,
+  static accelerator_inline void DhopDirK(StencilView &st, DoubledGaugeFieldView &U,SiteHalfSpinor * buf,
 				   int sF, int sU, const FermionFieldView &in, FermionFieldView &out, int dirdisp, int gamma);
+
+  static accelerator_inline void DhopDirXp(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,int sF,int sU,const FermionFieldView &in,FermionFieldView &out,int dirdisp);
+  static accelerator_inline void DhopDirYp(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,int sF,int sU,const FermionFieldView &in,FermionFieldView &out,int dirdisp);
+  static accelerator_inline void DhopDirZp(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,int sF,int sU,const FermionFieldView &in,FermionFieldView &out,int dirdisp);
+  static accelerator_inline void DhopDirTp(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,int sF,int sU,const FermionFieldView &in,FermionFieldView &out,int dirdisp);
+  static accelerator_inline void DhopDirXm(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,int sF,int sU,const FermionFieldView &in,FermionFieldView &out,int dirdisp);
+  static accelerator_inline void DhopDirYm(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,int sF,int sU,const FermionFieldView &in,FermionFieldView &out,int dirdisp);
+  static accelerator_inline void DhopDirZm(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,int sF,int sU,const FermionFieldView &in,FermionFieldView &out,int dirdisp);
+  static accelerator_inline void DhopDirTm(StencilView &st,DoubledGaugeFieldView &U,SiteHalfSpinor *buf,int sF,int sU,const FermionFieldView &in,FermionFieldView &out,int dirdisp);
       
   // Specialised variants
   static accelerator void GenericDhopSite(StencilView &st,  DoubledGaugeFieldView &U, SiteHalfSpinor * buf,

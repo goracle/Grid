@@ -18,11 +18,22 @@
 #pragma push_macro("__CUDA_ARCH__")
 #pragma push_macro("__NVCC__")
 #pragma push_macro("__CUDACC__")
+#undef __CUDA_ARCH__
 #undef __NVCC__
 #undef __CUDACC__
-#undef __CUDA_ARCH__
 #define __NVCC__REDEFINE__
+#endif 
+
+/* SYCL save and restore compile environment*/
+#ifdef GRID_SYCL
+#pragma push
+#pragma push_macro("__SYCL_DEVICE_ONLY__")
+#undef __SYCL_DEVICE_ONLY__
+#define EIGEN_DONT_VECTORIZE
+//#undef EIGEN_USE_SYCL
+#define __SYCL__REDEFINE__
 #endif
+
 
 #include <Grid/Eigen/Dense>
 #include <Grid/Eigen/unsupported/CXX11/Tensor>
@@ -35,7 +46,14 @@
 #pragma pop
 #endif
 
+/*SYCL restore*/
+#ifdef __SYCL__REDEFINE__
+#pragma pop_macro("__SYCL_DEVICE_ONLY__")
+#pragma pop
+#endif
+
 #if defined __GNUC__
 #pragma GCC diagnostic pop
 #endif
+
 

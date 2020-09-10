@@ -73,7 +73,7 @@ int main(int argc, char **argv) {
     omp_set_num_threads(omp);
 #endif
 
-    for (int lat = 8; lat <= 16; lat += 40) {
+    for (int lat = 16; lat <= 16; lat += 40) {
       std::cout << "Lat " << lat << std::endl;
 
       latt_size[0] = lat;
@@ -137,7 +137,6 @@ int main(int argc, char **argv) {
       LatticeReal iscalar(&Fine);
 
       SpinMatrix GammaFive;
-      iSpinMatrix<vComplex> iGammaFive;
       ColourMatrix cmat;
 
       random(FineRNG, Foo);
@@ -159,15 +158,17 @@ int main(int argc, char **argv) {
       LatticeColourMatrix newFoo = Foo; 
       // confirm correctness of copy constructor
       Bar = Foo - newFoo;
-      std::cout << "Copy constructor diff check: "; 
+      std::cout << "Copy constructor diff check: \n"; 
       double test_cc = norm2(Bar);
       if (test_cc < 1e-5){
         std::cout << "OK\n";
-    }
-      else{
+      } else{
+	std::cout << "Foo\n"<<Foo<<std::endl;
+	std::cout << "newFoo\n"<<newFoo<<std::endl;
+	std::cout << "Bar\n"<<Bar<<std::endl;
         std::cout << "fail\n";
         abort();
-    }
+      }
 
       // Norm2 check
       LatticeReal BarReal(&Fine);
@@ -281,7 +282,6 @@ int main(int argc, char **argv) {
       cMat = mydouble * cMat;
 
       sMat = adj(sMat);          // LatticeSpinMatrix adjoint
-      sMat = iGammaFive * sMat;  // SpinMatrix * LatticeSpinMatrix
       sMat = GammaFive * sMat;   // SpinMatrix * LatticeSpinMatrix
       scMat = adj(scMat);
       cMat = adj(cMat);

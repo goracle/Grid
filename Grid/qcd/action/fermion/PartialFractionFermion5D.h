@@ -47,8 +47,8 @@ public:
   void   M_internal(const FermionField &in, FermionField &out,int dag);
 
   // override multiply
-  virtual RealD  M    (const FermionField &in, FermionField &out);
-  virtual RealD  Mdag (const FermionField &in, FermionField &out);
+  virtual void   M    (const FermionField &in, FermionField &out);
+  virtual void   Mdag (const FermionField &in, FermionField &out);
 
   // half checkerboard operaions
   virtual void   Meooe       (const FermionField &in, FermionField &out);
@@ -67,12 +67,13 @@ public:
 
   // Efficient support for multigrid coarsening
   virtual void  Mdir (const FermionField &in, FermionField &out,int dir,int disp);
+  virtual void  MdirAll(const FermionField &in, std::vector<FermionField> &out);
 
-      ///////////////////////////////////////////////////////////////
-      // Physical surface field utilities
-      ///////////////////////////////////////////////////////////////
-      virtual void ExportPhysicalFermionSolution(const FermionField &solution5d,FermionField &exported4d);
-      virtual void ImportPhysicalFermionSource  (const FermionField &input4d,FermionField &imported5d);
+  ///////////////////////////////////////////////////////////////
+  // Physical surface field utilities
+  ///////////////////////////////////////////////////////////////
+  virtual void ExportPhysicalFermionSolution(const FermionField &solution5d,FermionField &exported4d);
+  virtual void ImportPhysicalFermionSource  (const FermionField &input4d,FermionField &imported5d);
 
   // Constructors
   PartialFractionFermion5D(GaugeField &_Umu,

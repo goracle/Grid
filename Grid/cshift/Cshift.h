@@ -49,4 +49,14 @@ Author: Peter Boyle <paboyle@ph.ed.ac.uk>
 #ifdef GRID_COMMS_SHMEM
 #include <Grid/cshift/Cshift_mpi.h> // uses same implementation of communicator
 #endif 
+
+NAMESPACE_BEGIN(Grid);
+
+template<class Expression,typename std::enable_if<is_lattice_expr<Expression>::value,void>::type * = nullptr> 
+auto Cshift(const Expression &expr,int dim,int shift)  -> decltype(closure(expr)) 
+{
+  return Cshift(closure(expr),dim,shift);
+}
+NAMESPACE_END(Grid);
+
 #endif
