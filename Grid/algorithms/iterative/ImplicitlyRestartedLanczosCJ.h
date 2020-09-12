@@ -581,7 +581,7 @@ PARALLEL_FOR_LOOP
 		for(int kk=0; kk<Nm; kk += k_block)
 		for(int j=jj; (j<(j1)) && j<(jj+j_block); ++j){
 			for(int k=kk; (k<Nm) && k<(kk+k_block) ; ++k){
-			    B[j].View()[ss] +=Qt[k+Nm*j] * evec[k].View()[ss]; 
+			    B[j].View(CpuWrite)[ss] +=Qt[k+Nm*j] * evec[k].View(CpuWrite)[ss]; 
 			}
 		}
 	}
@@ -612,11 +612,11 @@ void Rotate(
 				zeroit(B[j]);
 			for(int j=j0; j<j1; ++j){
 				for(int k=0; k<_Nk ; ++k){
-					B[j] +=Qt[k+Nm*j] * evec[k].View()[ss];
+					B[j] +=Qt[k+Nm*j] * evec[k].View(CpuRead)[ss];
 				}
 			}
 			for(int j=j0; j<j1; ++j){
-				evec[j].View()[ss] = B[j];
+				evec[j].View(CpuWrite)[ss] = B[j];
 			}
 		}
 	}
@@ -652,14 +652,14 @@ PARALLEL_FOR_LOOP
 		std::cout<<GridLogMessage << "me = " << me << " i_field= "<< i_field << " k_field= "<<k_field << std::endl;
 //		printf("thr=%d ss=%d me=%d\n",thr,ss,me);fflush(stdout);
 //		assert(Nm*thr<grid->oSites());
-		for(int j=0; j<Nm; ++j) B[i_field].View()[j+Nm*k_field]=0.;
+		for(int j=0; j<Nm; ++j) B[i_field].View(CpuWrite)[j+Nm*k_field]=0.;
 		for(int j=k1-1; j<(k2+1); ++j){
 			for(int k=0; k<Nm ; ++k){
-			    B[i_field].View()[j+Nm*k_field] +=Qt[k+Nm*j] * evec[k].View()[ss]; 
+			    B[i_field].View(CpuWrite)[j+Nm*k_field] +=Qt[k+Nm*j] * evec[k].View()[ss]; 
 			}
 		}
 		for(int j=k1-1; j<(k2+1); ++j){
-			evec[j].View()[ss] = B[i_field].View()[j+Nm*k_field];
+			evec[j].View(CpuWrite)[ss] = B[i_field].View(CpuRead)[j+Nm*k_field];
 		}
 	}
 }
@@ -699,7 +699,7 @@ PARALLEL_FOR_LOOP
 	for(int kk=0; kk<_Nk; kk += k_block)
 	for(int j=jj; (j<_Nk) && j<(jj+j_block); ++j){
 	for(int k=kk; (k<_Nk) && k<(kk+k_block) ; ++k){
-	    B[j].View()[ss] +=Qt[k+Nm*j] * evec[k].View()[ss]; 
+	    B[j].View(CpuWrite)[ss] +=Qt[k+Nm*j] * evec[k].View(CpuRead)[ss]; 
 	}
 	}
 	}
@@ -828,14 +828,14 @@ PARALLEL_FOR_LOOP
 		assert( (Nm*thr)<grid->oSites());
 //		auto B2 = evec[0].View()[0];
 //		std::vector < decltype( B2 ) > B(Nm,B2);
-		for(int j=0; j<Nconv; ++j) B.View()[Iconv[j]+Nm*me]=0.;
+		for(int j=0; j<Nconv; ++j) B.View(CpuWrite)[Iconv[j]+Nm*me]=0.;
 		for(int j=0; j<Nconv; ++j){
 			for(int k=0; k<_Nk ; ++k){
-			    B.View()[Iconv[j]+Nm*me] +=Qt[k+Nm*Iconv[j]] * evec[k].View()[ss]; 
+			    B.View(CpuWrite)[Iconv[j]+Nm*me] +=Qt[k+Nm*Iconv[j]] * evec[k].View(CpuRead)[ss]; 
 			}
 		}
 		for(int j=0; j<Nconv; ++j){
-			evec[j].View()[ss] = B.View()[Iconv[j]+Nm*me];
+			evec[j].View(CpuWrite)[ss] = B.View(CpuRead)[Iconv[j]+Nm*me];
 		}
 	}
 }
@@ -858,11 +858,11 @@ void ConvRotate( int _Nk,
 //		for(int j=0; j<Nconv; ++j) B[j]=0.;
 		for(int j=0; j<Nconv; ++j){
 			for(int k=0; k<_Nk ; ++k){
-			    B[j] +=Qt[k+Nm*Iconv[j]] * evec[k].View()[ss]; 
+			    B[j] +=Qt[k+Nm*Iconv[j]] * evec[k].View(CpuRead)[ss]; 
 			}
 		}
 		for(int j=0; j<Nconv; ++j){
-			evec[j].View()[ss] = B[j];
+			evec[j].View(CpuWrite)[ss] = B[j];
 		}
 	}
 	}

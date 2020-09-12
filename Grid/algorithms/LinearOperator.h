@@ -304,9 +304,8 @@ template<class Matrix,class Field>
 };
 template<class Matrix,class Field>
   class SchurDiagTwoOperator :  public SchurOperatorBase<Field> {
- protected:
-    Matrix &_Mat;
  public:
+    Matrix &_Mat;
     SchurDiagTwoOperator (Matrix &Mat): _Mat(Mat){};
     
     virtual void Mpc      (const Field &in, Field &out) {
